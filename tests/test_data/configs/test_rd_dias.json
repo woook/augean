@@ -1,0 +1,17 @@
+{
+  "format_name": "test_format_a",
+  "format_version": "1.0",
+  "fingerprint": [
+    { "sheet": "sheet1", "cell": "A1", "equals": "hello" }
+  ],
+  "sheets": {
+    "sheet1": {
+      "extraction_type": "named_cells",
+      "fields": [
+        { "db_column": "name", "cell": "A1" }
+      ]
+    }
+  },
+  "merge_strategy": {},
+  "constant_fields": {}
+}

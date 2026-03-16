@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: hestia
+Version: 0.1.0
+Summary: Config-driven Excel workbook staging extractor for ClinVar submissions
+Requires-Python: >=3.12
+Requires-Dist: pandas>=2.2
+Requires-Dist: openpyxl>=3.1
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: psycopg2-binary>=2.9
+Requires-Dist: numpy>=1.26
+Provides-Extra: dev
+Requires-Dist: pytest>=8; extra == "dev"
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: freezegun; extra == "dev"
