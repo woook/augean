@@ -1,0 +1,89 @@
+"""Normalisation and derived-field transformations."""
+import logging
+
+import numpy as np
+import pandas as pd
+
+log = logging.getLogger(__name__)
+
+
+def apply_normalisations(df: pd.DataFrame, normalisations: list) -> pd.DataFrame:
+    """Apply replace-map normalisations to specified fields."""
+    for norm in normalisations:
+        field = norm["field"]
+        if field in df.columns:
+            df[field] = df[field].replace(norm.get("replace", {}))
+    return df
+
+
+def make_acgs_criteria_null(df: pd.DataFrame, criteria: list) -> pd.DataFrame:
+    """Replace 'NA' with NaN for ACGS criteria; null evidence if criterion is null."""
+    for criterion in criteria:
+        if criterion not in df.columns:
+            continue
+        df.loc[df[criterion] == "NA", criterion] = np.nan
+
+    for criterion in criteria:
+        if criterion not in df.columns:
+            continue
+        evidence_col = f"{criterion}_evidence"
+        if evidence_col in df.columns:
+            df.loc[df[criterion].isna(), evidence_col] = np.nan
+
+    return df
+
+
+def build_acgs_comment(df: pd.DataFrame, derived_config: dict) -> pd.DataFrame:
+    """Build comment_on_classification string per row.
+
+    If a criterion was applied at its default strength, it appears without
+    a suffix (e.g. "PVS1"). If at non-default strength, appended with the
+    strength (e.g. "PS4_Moderate").
+    """
+    criteria = derived_config.get("criteria", [])
+    matched_strength = derived_config.get("matched_strength", {})
+    db_col = derived_config.get("db_column", "comment_on_classification")
+
+    df[db_col] = ""
+
+    for index, row in df.iterrows():
+        parts = []
+        for criterion in criteria:
+            if criterion not in df.columns:
+                continue
+            val = row.get(criterion)
+            if pd.isna(val):
+                continue
+            prefix = criterion.upper()[:-1]  # "pvs1" → "PVS", "pm1" → "PM"
+            label = criterion.upper()
+            if matched_strength.get(prefix) == val:
+                parts.append(label)
+            else:
+                parts.append(f"{label}_{val}")
+        df.loc[index, db_col] = ",".join(parts)
+
+    return df
+
+
+def apply_derived_fields(df: pd.DataFrame, derived_fields: list[dict]) -> pd.DataFrame:
+    """Dispatch to the appropriate derivation function by type."""
+    for field_config in derived_fields:
+        field_type = field_config.get("type")
+        if field_type == "acgs_comment":
+            df = build_acgs_comment(df, field_config)
+        else:
+            log.warning("Unknown derived field type: %s", field_type)
+    return df
+
+
+def transform(df: pd.DataFrame, config: dict) -> pd.DataFrame:
+    """Orchestrate: normalisations → ACGS null → derived fields."""
+    df = apply_normalisations(df, config.get("normalisations", []))
+
+    acgs_config = config.get("validations", {}).get("acgs", {})
+    if acgs_config:
+        df = make_acgs_criteria_null(df, acgs_config.get("criteria", []))
+
+    df = apply_derived_fields(df, config.get("derived_fields", []))
+
+    return df
