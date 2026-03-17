@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, call, patch
 import pandas as pd
 import pytest
 
-from hestia.db import (
+from augean.db import (
     add_variants,
     add_workbook,
     get_failed_workbooks,
@@ -12,7 +12,7 @@ from hestia.db import (
     mark_workbook_failed,
     mark_workbook_parsed,
 )
-from hestia.errors import ParseError
+from augean.errors import ParseError
 
 
 def _make_engine():
@@ -77,7 +77,7 @@ class TestAddVariants:
     def test_returns_row_count(self):
         engine, conn = _make_engine()
         df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"], "chromosome": [1]})
-        with patch("hestia.db.pd.DataFrame.to_sql", return_value=1) as mock_to_sql:
+        with patch("augean.db.pd.DataFrame.to_sql", return_value=1) as mock_to_sql:
             count = add_variants(engine, df, "inca", "testdirectory")
         assert count == 1
 

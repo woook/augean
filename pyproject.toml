@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "hestia"
+name = "augean"
 version = "0.1.0"
 description = "Config-driven Excel workbook staging extractor for ClinVar submissions"
 requires-python = ">=3.12"
@@ -19,8 +19,8 @@ dependencies = [
 dev = ["pytest>=8", "pytest-cov", "freezegun"]
 
 [project.scripts]
-hestia = "hestia.main:main"
+augean = "augean.main:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["hestia*"]
+include = ["augean*"]

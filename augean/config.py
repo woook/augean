@@ -3,7 +3,7 @@ import logging
 import re
 from pathlib import Path
 
-from hestia.errors import AmbiguousWorkbookFormatError, ConfigValidationError, WorkbookFormatUnknownError
+from augean.errors import AmbiguousWorkbookFormatError, ConfigValidationError, WorkbookFormatUnknownError
 
 log = logging.getLogger(__name__)
 

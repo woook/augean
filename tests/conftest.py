@@ -51,7 +51,7 @@ def haemonc_workbook(haemonc_path):
 
 @pytest.fixture(scope="session")
 def all_configs():
-    from hestia.config import load_configs
+    from augean.config import load_configs
     return load_configs(CONFIGS_DIR)
 
 

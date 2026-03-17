@@ -8,8 +8,8 @@ import pandas as pd
 import pytest
 from freezegun import freeze_time
 
-from hestia import parser
-from hestia.parser import (
+from augean import parser
+from augean.parser import (
     _split_clinical_indication,
     extract_label_scan,
     extract_named_cells,
