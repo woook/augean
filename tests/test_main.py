@@ -1,6 +1,7 @@
 """Smoke tests for the CLI entry point (augean/main.py)."""
-import subprocess
+import io
 import sys
+from contextlib import redirect_stdout
 from pathlib import Path
 
 import pytest
@@ -16,10 +17,13 @@ def test_package_importable():
     assert augean is not None
 
 
-def test_cli_help():
-    result = subprocess.run(["augean", "--help"], capture_output=True, text=True)
-    assert result.returncode == 0
-    assert "augean" in result.stdout.lower() or "usage" in result.stdout.lower()
+def test_cli_help(monkeypatch):
+    monkeypatch.setattr(sys, "argv", ["augean", "--help"])
+    with pytest.raises(SystemExit) as exc_info:
+        with redirect_stdout(io.StringIO()) as out:
+            main()
+    assert exc_info.value.code == 0
+    assert "augean" in out.getvalue().lower() or "usage" in out.getvalue().lower()
 
 
 def test_write_error_csv(tmp_path):
