@@ -1,8 +1,8 @@
 """Tests for loader.py."""
 import pytest
 
-from hestia.loader import detect_format, load_workbook
-from hestia.errors import WorkbookFormatUnknownError
+from augean.loader import detect_format, load_workbook
+from augean.errors import WorkbookFormatUnknownError
 
 
 class TestLoadWorkbook:

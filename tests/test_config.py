@@ -6,8 +6,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from hestia.config import _evaluate_fingerprint, get_config_for_workbook, load_configs
-from hestia.errors import (
+from augean.config import _evaluate_fingerprint, get_config_for_workbook, load_configs
+from augean.errors import (
     AmbiguousWorkbookFormatError,
     ConfigValidationError,
     WorkbookFormatUnknownError,

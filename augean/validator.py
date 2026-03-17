@@ -4,7 +4,7 @@ import re
 
 import pandas as pd
 
-from hestia.errors import ParseError
+from augean.errors import ParseError
 
 log = logging.getLogger(__name__)
 
