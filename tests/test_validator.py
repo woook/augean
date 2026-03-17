@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hestia.errors import ParseError
-from hestia.validator import (
+from augean.errors import ParseError
+from augean.validator import (
     validate_acgs,
     validate_all,
     validate_cross_sheet,

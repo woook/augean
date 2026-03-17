@@ -1,4 +1,4 @@
-"""CLI entry point for Hestia workbook staging extractor."""
+"""CLI entry point for Augean workbook staging extractor."""
 import argparse
 import json
 import logging
@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pandas as pd
 
-from hestia import config as config_module
-from hestia import db, loader, parser, transformer, validator
-from hestia.errors import AmbiguousWorkbookFormatError, WorkbookFormatUnknownError
+from augean import config as config_module
+from augean import db, loader, parser, transformer, validator
+from augean.errors import AmbiguousWorkbookFormatError, WorkbookFormatUnknownError
 
 log = logging.getLogger(__name__)
 
 
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
-        description="Hestia: config-driven Excel workbook staging extractor"
+        description="Augean: config-driven Excel workbook staging extractor"
     )
     ap.add_argument("--db_credentials", required=True, help="Path to JSON with DB credentials")
     ap.add_argument("--config_dir", required=True, help="Path to configs/ directory")

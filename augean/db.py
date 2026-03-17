@@ -6,7 +6,7 @@ import pandas as pd
 from sqlalchemy import create_engine as _sa_create_engine, text
 from sqlalchemy.engine import Engine
 
-from hestia.errors import ParseError
+from augean.errors import ParseError
 
 log = logging.getLogger(__name__)
 
