@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from hestia.transformer import (
+from augean.transformer import (
     apply_derived_fields,
     apply_normalisations,
     build_acgs_comment,

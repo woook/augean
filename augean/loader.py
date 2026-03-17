@@ -3,8 +3,8 @@ from pathlib import Path
 
 import openpyxl
 
-from hestia.config import get_config_for_workbook
-from hestia.errors import AmbiguousWorkbookFormatError, WorkbookFormatUnknownError
+from augean.config import get_config_for_workbook
+from augean.errors import AmbiguousWorkbookFormatError, WorkbookFormatUnknownError
 
 log = logging.getLogger(__name__)
 

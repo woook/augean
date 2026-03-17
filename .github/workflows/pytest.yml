@@ -27,4 +27,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ -v --cov=hestia --cov-report=term-missing
+          pytest tests/ -v --cov=augean --cov-report=term-missing
