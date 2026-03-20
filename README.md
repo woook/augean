@@ -21,7 +21,7 @@ Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validat
 |---|---|---|
 | Excel workbook(s) | `--workbooks_path DIR` or `--samples_file FILE` | `.xlsx` files. Use `--workbooks_path` to process every `.xlsx` in a directory, or `--samples_file` to provide a plain-text file with one absolute workbook path per line. |
 | Config directory | `--config_dir DIR` | Directory containing one or more format config files (see [Config files](#config-files) below). The bundled `configs/` directory contains the two built-in formats. |
-| Database credentials | `--db_credentials FILE` | JSON file with keys `user`, `password`, `host`, `database`, and optionally `port` (default 5432). Not required when `--dry_run` is set. |
+| Database credentials | `--db_credentials FILE` | JSON file with keys `user`, `password`, `host`, `database`, and optionally `port` (default 5432). Always required by the CLI, but the file is not opened when `--dry_run` is set. |
 | Output directory | `--output_dir DIR` | Directory where per-workbook error CSVs are written. Created automatically if it does not exist. |
 
 ### Optional
@@ -100,6 +100,7 @@ Dry run (no database writes):
 
 ```bash
 augean \
+  --db_credentials /path/to/creds.json \
   --config_dir configs/ \
   --workbooks_path /path/to/workbooks/ \
   --output_dir /path/to/errors/ \
@@ -137,7 +138,12 @@ To add a new workbook to smoke testing:
 1. Copy the file into `tests/test_data/workbooks/haemonc/`
 2. Inspect the output using dry-run:
    ```bash
-   python -m augean.main --dry_run path/to/workbook.xlsx
+   python -m augean.main \
+     --db_credentials /path/to/creds.json \
+     --config_dir configs/ \
+     --workbooks_path tests/test_data/workbooks/haemonc/ \
+     --output_dir /tmp/augean-errors/ \
+     --dry_run
    ```
 3. Run the smoke tests to confirm it passes:
    ```bash

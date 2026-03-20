@@ -429,8 +429,14 @@ class TestParseWorkbook:
 # ---------------------------------------------------------------------------
 
 _HAEMONC_DIR = WORKBOOKS_DIR / "haemonc"
+_HAEMONC_XLSX = sorted(_HAEMONC_DIR.glob("*.xlsx"))
 
-@pytest.mark.parametrize("xlsx_path", sorted(_HAEMONC_DIR.glob("*.xlsx")))
+
+def test_haemonc_smoke_inputs_present():
+    assert _HAEMONC_XLSX, f"No .xlsx files found in {_HAEMONC_DIR}"
+
+
+@pytest.mark.parametrize("xlsx_path", _HAEMONC_XLSX, ids=lambda p: p.name)
 def test_haemonc_workbook_smoke(xlsx_path, haemonc_config):
     import openpyxl
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
