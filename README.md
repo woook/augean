@@ -30,6 +30,7 @@ Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validat
 |---|---|
 | `--organisation {CUH,NUH}` | Label appended to log output to identify the source organisation. |
 | `--dry_run` | Parse and validate only; no database writes. |
+| `--migrate` | Add missing columns to the target table before inserting (see [Schema migration](#schema-migration)). |
 | `--format FORMAT_NAME` | Skip auto-detection and force a specific format (e.g. `rd_dias_v1`). |
 | `--db_table TABLE` | Target table name (default: `inca`). |
 | `--db_schema SCHEMA` | Target schema name (default: `testdirectory`). |
@@ -106,6 +107,38 @@ augean \
   --output_dir /path/to/errors/ \
   --dry_run
 ```
+
+## Schema migration
+
+Before inserting, Augean compares the DataFrame columns against the columns present in the target PostgreSQL table. If any columns are missing, the workbook is marked as failed and an error is written to the error CSV containing the `ALTER TABLE` statements needed to resolve the mismatch:
+
+```
+Schema mismatch: The following columns are not present in testdirectory.inca
+and must be added before inserting: ['prev_classification_date']
+
+Run the following SQL to resolve:
+
+    ALTER TABLE testdirectory.inca ADD COLUMN prev_classification_date TEXT;
+
+Or re-run with --migrate to apply automatically.
+```
+
+This behaviour ensures that new config fields cannot silently go unrecorded — a schema change requires explicit action.
+
+### Automatic migration with `--migrate`
+
+To apply the schema changes and insert in a single step, pass `--migrate`:
+
+```bash
+augean \
+  --db_credentials /path/to/creds.json \
+  --config_dir configs/ \
+  --workbooks_path /path/to/workbooks/ \
+  --output_dir /path/to/errors/ \
+  --migrate
+```
+
+Each column added is logged at `WARNING` level so the change is always visible. Column types are inferred from the DataFrame dtype (`TEXT`, `NUMERIC`, `INTEGER`, or `DATE`); adjust the column type manually afterwards if a different type is required.
 
 ## Testing
 
