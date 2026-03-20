@@ -106,3 +106,43 @@ augean \
   --output_dir /path/to/errors/ \
   --dry_run
 ```
+
+## Testing
+
+Run the full test suite:
+
+```bash
+pytest
+```
+
+### Test structure
+
+| Module | What it covers |
+|---|---|
+| `test_config.py` | Config loading, fingerprint matching, format auto-detection |
+| `test_loader.py` | Workbook opening, format identification |
+| `test_parser.py` | All extraction types (`named_cells`, `label_scan`, `tabular`, `named_cells_multi`, `sentinel_scan`), merge logic, `parse_workbook` integration |
+| `test_validator.py` | Structural, field, cross-sheet and ACGS validators |
+| `test_transformer.py` | Normalisations, ACGS criteria nulling, comment building |
+| `test_db.py` | SQLAlchemy staging insert/upsert operations |
+| `test_main.py` | CLI entry point |
+
+Most parser and validator tests use mock workbooks built in-memory. Integration tests in `test_parser.py` and `test_validator.py` run against real workbooks in `tests/test_data/workbooks/`.
+
+### HaemOnc smoke tests
+
+`test_parser.py` contains a parametrized smoke test that runs against every `.xlsx` file in `tests/test_data/workbooks/haemonc/`. It asserts that each workbook parses without error and produces a non-empty DataFrame with the expected columns.
+
+To add a new workbook to smoke testing:
+
+1. Copy the file into `tests/test_data/workbooks/haemonc/`
+2. Inspect the output using dry-run:
+   ```bash
+   python -m augean.main --dry_run path/to/workbook.xlsx
+   ```
+3. Run the smoke tests to confirm it passes:
+   ```bash
+   pytest tests/test_parser.py::test_haemonc_workbook_smoke -v
+   ```
+
+No test code changes are needed — the parametrized test picks up any new `.xlsx` in that directory automatically.
