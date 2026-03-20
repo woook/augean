@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, call, patch
 import pandas as pd
 import pytest
 
+import augean.db as db_module
 from augean.db import (
     add_variants,
     add_workbook,
@@ -11,8 +12,9 @@ from augean.db import (
     get_parsed_workbooks,
     mark_workbook_failed,
     mark_workbook_parsed,
+    migrate_schema,
 )
-from augean.errors import ParseError
+from augean.errors import ParseError, SchemaMismatchError
 
 
 def _make_engine():
@@ -77,7 +79,8 @@ class TestAddVariants:
     def test_returns_row_count(self):
         engine, conn = _make_engine()
         df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"], "chromosome": [1]})
-        with patch("augean.db.pd.DataFrame.to_sql", return_value=1) as mock_to_sql:
+        with patch.object(db_module, "_check_schema"), \
+             patch("augean.db.pd.DataFrame.to_sql", return_value=1):
             count = add_variants(engine, df, "inca", "testdirectory")
         assert count == 1
 
@@ -86,6 +89,56 @@ class TestAddVariants:
         df = pd.DataFrame()
         count = add_variants(engine, df, "inca", "testdirectory")
         assert count == 0
+        conn.execute.assert_not_called()
+
+    def test_schema_mismatch_raises(self):
+        engine, _ = _make_engine()
+        df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"], "new_col": ["val"]})
+        with patch.object(db_module, "_sa_inspect") as mock_inspect:
+            mock_inspect.return_value.has_table.return_value = True
+            mock_inspect.return_value.get_columns.return_value = [{"name": "hgvsc"}]
+            with pytest.raises(SchemaMismatchError) as exc_info:
+                add_variants(engine, df, "inca", "testdirectory")
+        assert "new_col" in str(exc_info.value)
+        assert "ALTER TABLE" in str(exc_info.value)
+        assert "--migrate" in str(exc_info.value)
+
+    def test_schema_check_skipped_when_table_absent(self):
+        engine, _ = _make_engine()
+        df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"]})
+        with patch.object(db_module, "_sa_inspect") as mock_inspect, \
+             patch("augean.db.pd.DataFrame.to_sql", return_value=1):
+            mock_inspect.return_value.has_table.return_value = False
+            count = add_variants(engine, df, "inca", "testdirectory")
+        assert count == 1
+
+
+class TestMigrateSchema:
+    def test_executes_alter_for_missing_columns(self):
+        engine, conn = _make_engine()
+        df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"], "new_col": ["val"]})
+        with patch.object(db_module, "_sa_inspect") as mock_inspect:
+            mock_inspect.return_value.has_table.return_value = True
+            mock_inspect.return_value.get_columns.return_value = [{"name": "hgvsc"}]
+            migrate_schema(engine, df, "inca", "testdirectory")
+        sql_called = conn.execute.call_args[0][0].text
+        assert "ADD COLUMN new_col" in sql_called
+
+    def test_no_alter_when_schema_matches(self):
+        engine, conn = _make_engine()
+        df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"]})
+        with patch.object(db_module, "_sa_inspect") as mock_inspect:
+            mock_inspect.return_value.has_table.return_value = True
+            mock_inspect.return_value.get_columns.return_value = [{"name": "hgvsc"}]
+            migrate_schema(engine, df, "inca", "testdirectory")
+        conn.execute.assert_not_called()
+
+    def test_skipped_when_table_absent(self):
+        engine, conn = _make_engine()
+        df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"]})
+        with patch.object(db_module, "_sa_inspect") as mock_inspect:
+            mock_inspect.return_value.has_table.return_value = False
+            migrate_schema(engine, df, "inca", "testdirectory")
         conn.execute.assert_not_called()
 
 
