@@ -8,3 +8,4 @@ build/
 .coverage
 htmlcov/
 .pytest_cache/
+tests/test_data/workbooks/
