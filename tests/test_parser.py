@@ -422,3 +422,28 @@ class TestParseWorkbook:
             df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
 
         assert df["allele_origin"].unique()[0] == "somatic"
+
+
+# ---------------------------------------------------------------------------
+# Smoke tests: all HaemOnc workbooks in test_data parse without error
+# ---------------------------------------------------------------------------
+
+_HAEMONC_DIR = WORKBOOKS_DIR / "haemonc"
+_HAEMONC_XLSX = sorted(_HAEMONC_DIR.glob("*.xlsx"))
+
+
+def test_haemonc_smoke_inputs_present():
+    assert _HAEMONC_XLSX, f"No .xlsx files found in {_HAEMONC_DIR}"
+
+
+@pytest.mark.parametrize("xlsx_path", _HAEMONC_XLSX, ids=lambda p: p.name)
+def test_haemonc_workbook_smoke(xlsx_path, haemonc_config):
+    import openpyxl
+    wb = openpyxl.load_workbook(xlsx_path, data_only=True)
+    with patch.object(parser, "time") as mock_time:
+        mock_time.sleep = MagicMock()
+        df = parse_workbook(wb, haemonc_config, xlsx_path)
+    assert not df.empty
+    assert "sample_id" in df.columns
+    assert "hgvsc" in df.columns
+    assert "allele_origin" in df.columns
