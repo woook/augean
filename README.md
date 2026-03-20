@@ -49,8 +49,8 @@ Augean auto-detects the format by matching each workbook against the `fingerprin
 ### Workbook format requirements
 
 **rd_dias_v1**
-- Sheet `summary`: cell B1 must contain a 9-digit sample ID; cell F1 must contain a clinical indication in `<preferred_condition_name> (<R-code>)` format.
-- Sheet `included`: must have columns `HGVSc`, `CHROM`, `POS`, `Interpreted`.
+- Sheet `summary`: cell B1 must contain a sample ID matching the pattern `^\d{9}-` (9 digits followed by a dash); cell F1 must contain a clinical indication in `<preferred_condition_name> (<R-code>)` format.
+- Sheet `included`: must have columns `CHROM`, `POS`, `REF`, `ALT`, `SYMBOL`, `HGVSc`, `Consequence`, `Interpreted`, `Comment`.
 - One or more sheets whose names match the pattern `^interpret`: each must contain the ACMG/ACGS classification criteria in the expected cell layout.
 
 **haemonc_uranus_v1**
@@ -73,7 +73,7 @@ Two tables in the target PostgreSQL database are written:
 
 When a workbook fails validation or parsing, a CSV is written to `--output_dir`:
 
-```
+```text
 <output_dir>/<workbook_filename>_errors.csv
 ```
 
@@ -100,7 +100,6 @@ Dry run (no database writes):
 
 ```bash
 augean \
-  --db_credentials /path/to/creds.json \
   --config_dir configs/ \
   --workbooks_path /path/to/workbooks/ \
   --output_dir /path/to/errors/ \
