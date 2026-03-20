@@ -9,7 +9,7 @@ import pandas as pd
 
 from augean import config as config_module
 from augean import db, loader, parser, transformer, validator
-from augean.errors import AmbiguousWorkbookFormatError, WorkbookFormatUnknownError
+from augean.errors import AmbiguousWorkbookFormatError, SchemaMismatchError, WorkbookFormatUnknownError
 
 log = logging.getLogger(__name__)
 
@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--output_dir", required=True, help="Directory for error CSVs")
     ap.add_argument("--organisation", choices=["CUH", "NUH"], help="Organisation label")
     ap.add_argument("--dry_run", action="store_true", help="Parse only, no DB writes")
+    ap.add_argument("--migrate", action="store_true", help="Add missing DB columns before inserting")
     ap.add_argument(
         "--format",
         dest="format_override",
@@ -153,7 +154,15 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
     db_cfg = cfg.get("db", {})
     table = db_cfg.get("table", args.db_table)
     schema = db_cfg.get("schema", args.db_schema)
-    rows = db.add_variants(engine, final_df, table, schema)
+    if args.migrate:
+        db.migrate_schema(engine, final_df, table, schema)
+    try:
+        rows = db.add_variants(engine, final_df, table, schema)
+    except SchemaMismatchError as exc:
+        log.error("Schema mismatch for '%s': %s", wb_name, exc)
+        db.mark_workbook_failed(engine, wb_name, [str(exc)])
+        _write_error_csv(output_dir, wb_name, [str(exc)])
+        return
     log.info("Inserted %d row(s) for '%s'", rows, wb_name)
     db.mark_workbook_parsed(engine, wb_name)
 

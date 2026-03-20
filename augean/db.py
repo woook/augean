@@ -3,10 +3,10 @@ import datetime
 import logging
 
 import pandas as pd
-from sqlalchemy import create_engine as _sa_create_engine, text
+from sqlalchemy import create_engine as _sa_create_engine, inspect as _sa_inspect, text
 from sqlalchemy.engine import Engine
 
-from augean.errors import ParseError
+from augean.errors import ParseError, SchemaMismatchError
 
 log = logging.getLogger(__name__)
 
@@ -69,15 +69,79 @@ def mark_workbook_failed(
 
 
 def add_variants(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> int:
-    """df.to_sql(table, ..., if_exists='append'); return row count."""
+    """df.to_sql(table, ..., if_exists='append'); return row count.
+
+    Raises SchemaMismatchError if the DataFrame contains columns not present in
+    the target table, with ALTER TABLE statements to resolve the mismatch.
+    """
     if df.empty:
         log.debug("add_variants: DataFrame is empty, nothing to insert")
         return 0
+    _check_schema(engine, df, table, schema)
     with engine.begin() as conn:
         rows = df.to_sql(table, conn, if_exists="append", schema=schema, index=False)
     count = rows if rows is not None else 0
     log.info("Inserted %d rows into %s.%s", count, schema, table)
     return count
+
+
+_PD_TO_PG = {
+    "object": "TEXT",
+    "float64": "NUMERIC",
+    "int64": "INTEGER",
+    "datetime64[ns]": "DATE",
+}
+
+
+def migrate_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> None:
+    """Add any DataFrame columns absent from the target table via ALTER TABLE.
+
+    Skipped when the table does not yet exist. Logs each column added.
+    """
+    missing = _missing_columns(engine, df, table, schema)
+    if not missing:
+        log.info("Schema up to date for %s.%s", schema, table)
+        return
+    with engine.begin() as conn:
+        for col in missing:
+            pg_type = _PD_TO_PG.get(str(df[col].dtype), "TEXT")
+            log.warning(
+                "Adding column to %s.%s: %s %s", schema, table, col, pg_type
+            )
+            conn.execute(text(f"ALTER TABLE {schema}.{table} ADD COLUMN {col} {pg_type}"))
+
+
+def _check_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> None:
+    """Raise SchemaMismatchError if df has columns absent from the target table.
+
+    Skipped when the table does not yet exist (to_sql will create it).
+    """
+    missing = _missing_columns(engine, df, table, schema)
+    if not missing:
+        return
+    statements = "\n".join(
+        f"    ALTER TABLE {schema}.{table} ADD COLUMN {col}"
+        f" {_PD_TO_PG.get(str(df[col].dtype), 'TEXT')};"
+        for col in missing
+    )
+    raise SchemaMismatchError(
+        f"The following columns are not present in {schema}.{table} "
+        f"and must be added before inserting: {missing}\n\n"
+        f"Run the following SQL to resolve:\n\n{statements}\n\n"
+        f"Or re-run with --migrate to apply automatically."
+    )
+
+
+def _missing_columns(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> list[str]:
+    """Return DataFrame columns not present in the target table.
+
+    Returns empty list if the table does not exist.
+    """
+    inspector = _sa_inspect(engine)
+    if not inspector.has_table(table, schema=schema):
+        return []
+    existing = {col["name"] for col in inspector.get_columns(table, schema=schema)}
+    return [col for col in df.columns if col not in existing]
 
 
 def get_parsed_workbooks(engine: Engine) -> list[str]:

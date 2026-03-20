@@ -21,3 +21,7 @@ class AmbiguousWorkbookFormatError(Exception):
 
 class ConfigValidationError(Exception):
     pass
+
+
+class SchemaMismatchError(Exception):
+    pass
