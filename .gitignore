@@ -9,3 +9,5 @@ build/
 htmlcov/
 .pytest_cache/
 tests/test_data/workbooks/
+db_credentials*.json
+!db_credentials.template.json
