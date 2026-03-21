@@ -20,21 +20,41 @@ Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validat
 | Input | Flag | Format / Notes |
 |---|---|---|
 | Excel workbook(s) | `--workbooks_path DIR` or `--samples_file FILE` | `.xlsx` files. Use `--workbooks_path` to process every `.xlsx` in a directory, or `--samples_file` to provide a plain-text file with one absolute workbook path per line. |
-| Config directory | `--config_dir DIR` | Directory containing one or more format config files (see [Config files](#config-files) below). The bundled `configs/` directory contains the two built-in formats. |
 | Database credentials | `--db_credentials FILE` | JSON file with keys `user`, `password`, `host`, `database`, and optionally `port` (default 5432). Always required by the CLI, but the file is not opened when `--dry_run` is set. |
-| Output directory | `--output_dir DIR` | Directory where per-workbook error CSVs are written. Created automatically if it does not exist. |
 
-### Optional
+### Deployment config (recommended)
+
+Deployment-specific settings that rarely change between runs can be placed in a JSON file and passed via `--deployment`. This avoids repeating flags on every invocation. A template is provided at `deployment.template.json`.
+
+```json
+{
+  "config_dir": "configs/",
+  "output_dir": "/path/to/error-output/",
+  "db_schema": "testdirectory",
+  "db_table": "inca",
+  "db_workbooks_table": "staging_workbooks",
+  "organisation": "CUH"
+}
+```
+
+`config_dir` and `output_dir` are required — either in the deployment config or as CLI flags. All other deployment values fall back to the defaults shown above if not specified.
+
+CLI flags always override values in the deployment config.
+
+### Optional flags
 
 | Flag | Description |
 |---|---|
-| `--organisation {CUH,NUH}` | Label appended to log output to identify the source organisation. |
+| `--deployment FILE` | Path to deployment config JSON. |
+| `--config_dir DIR` | Path to configs/ directory. Overrides deployment config. |
+| `--output_dir DIR` | Directory for error CSVs. Overrides deployment config. |
+| `--organisation {CUH,NUH}` | Organisation label. Overrides deployment config. |
 | `--dry_run` | Parse and validate only; no database writes. |
 | `--migrate` | Add missing columns to the target table before inserting (see [Schema migration](#schema-migration)). |
 | `--format FORMAT_NAME` | Skip auto-detection and force a specific format (e.g. `rd_dias_v1`). |
-| `--db_table TABLE` | Target variant table name (default: `inca`). |
-| `--db_schema SCHEMA` | Target schema name, applies to both tables (default: `testdirectory`). |
-| `--db_workbooks_table TABLE` | Workbook tracking table name (default: `staging_workbooks`). |
+| `--db_table TABLE` | Target variant table name. Overrides deployment config. |
+| `--db_schema SCHEMA` | Target schema. Overrides deployment config. |
+| `--db_workbooks_table TABLE` | Workbook tracking table name. Overrides deployment config. |
 | `--log_level {DEBUG,INFO,WARNING,ERROR}` | Logging verbosity (default: `INFO`). |
 
 ### Config files
@@ -89,23 +109,22 @@ pip install -e .
 
 ## Usage example
 
+With a deployment config:
+
 ```bash
 augean \
+  --deployment /path/to/deployment.json \
   --db_credentials /path/to/creds.json \
-  --config_dir configs/ \
-  --workbooks_path /path/to/workbooks/ \
-  --output_dir /path/to/errors/ \
-  --organisation CUH
+  --workbooks_path /path/to/workbooks/
 ```
 
 Dry run (no database writes):
 
 ```bash
 augean \
+  --deployment /path/to/deployment.json \
   --db_credentials /path/to/creds.json \
-  --config_dir configs/ \
   --workbooks_path /path/to/workbooks/ \
-  --output_dir /path/to/errors/ \
   --dry_run
 ```
 
@@ -173,10 +192,9 @@ To add a new workbook to smoke testing:
 2. Inspect the output using dry-run:
    ```bash
    python -m augean.main \
+     --deployment /path/to/deployment.json \
      --db_credentials /path/to/creds.json \
-     --config_dir configs/ \
      --workbooks_path tests/test_data/workbooks/haemonc/ \
-     --output_dir /tmp/augean-errors/ \
      --dry_run
    ```
 3. Run the smoke tests to confirm it passes:

@@ -11,3 +11,5 @@ htmlcov/
 tests/test_data/workbooks/
 db_credentials*.json
 !db_credentials.template.json
+deployment*.json
+!deployment.template.json
