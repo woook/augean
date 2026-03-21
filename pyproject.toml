@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "augean"
 version = "0.1.0"
 description = "Config-driven Excel workbook staging extractor for ClinVar submissions"
-requires-python = ">=3.12"
+requires-python = ">=3.10"
 dependencies = [
     "pandas>=2.2",
     "openpyxl>=3.1",

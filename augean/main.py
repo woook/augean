@@ -42,6 +42,7 @@ def parse_args() -> argparse.Namespace:
     )
     ap.add_argument("--db_table", default="inca", help="Target DB table name")
     ap.add_argument("--db_schema", default="testdirectory", help="Target DB schema")
+    ap.add_argument("--db_workbooks_table", default="staging_workbooks", help="Workbook tracking table name")
     return ap.parse_args()
 
 
@@ -110,8 +111,11 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         log.error("Format detection failed for '%s': %s", wb_name, exc)
         return
 
+    wb_schema = args.db_schema
+    wb_table = args.db_workbooks_table
+
     if engine is not None:
-        db.add_workbook(engine, wb_name, cfg["format_name"])
+        db.add_workbook(engine, wb_name, cfg["format_name"], schema=wb_schema, workbooks_table=wb_table)
 
     # Parse
     try:
@@ -120,7 +124,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         log.error("Parsing failed for '%s': %s", wb_name, exc)
         errors = [f"Parsing error: {exc}"]
         if engine is not None:
-            db.mark_workbook_failed(engine, wb_name, errors)
+            db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
         return
 
@@ -131,7 +135,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         for err in errors:
             log.warning("  %s", err)
         if engine is not None:
-            db.mark_workbook_failed(engine, wb_name, errors)
+            db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
         return
 
@@ -142,7 +146,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         log.error("Transform failed for '%s': %s", wb_name, exc)
         errors = [f"Transform error: {exc}"]
         if engine is not None:
-            db.mark_workbook_failed(engine, wb_name, errors)
+            db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
         return
 
@@ -160,11 +164,11 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         rows = db.add_variants(engine, final_df, table, schema)
     except SchemaMismatchError as exc:
         log.error("Schema mismatch for '%s': %s", wb_name, exc)
-        db.mark_workbook_failed(engine, wb_name, [str(exc)])
+        db.mark_workbook_failed(engine, wb_name, [str(exc)], schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, [str(exc)])
         return
     log.info("Inserted %d row(s) for '%s'", rows, wb_name)
-    db.mark_workbook_parsed(engine, wb_name)
+    db.mark_workbook_parsed(engine, wb_name, schema=wb_schema, workbooks_table=wb_table)
 
 
 def _write_error_csv(output_dir: Path, workbook_name: str, errors: list) -> None:
