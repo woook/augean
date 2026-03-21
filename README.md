@@ -32,8 +32,9 @@ Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validat
 | `--dry_run` | Parse and validate only; no database writes. |
 | `--migrate` | Add missing columns to the target table before inserting (see [Schema migration](#schema-migration)). |
 | `--format FORMAT_NAME` | Skip auto-detection and force a specific format (e.g. `rd_dias_v1`). |
-| `--db_table TABLE` | Target table name (default: `inca`). |
-| `--db_schema SCHEMA` | Target schema name (default: `testdirectory`). |
+| `--db_table TABLE` | Target variant table name (default: `inca`). |
+| `--db_schema SCHEMA` | Target schema name, applies to both tables (default: `testdirectory`). |
+| `--db_workbooks_table TABLE` | Workbook tracking table name (default: `staging_workbooks`). |
 | `--log_level {DEBUG,INFO,WARNING,ERROR}` | Logging verbosity (default: `INFO`). |
 
 ### Config files
