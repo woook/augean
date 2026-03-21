@@ -1,6 +1,6 @@
 # Augean
 
-Config-driven Excel workbook staging extractor for ClinVar submissions.
+Config-driven extractor for variant classification Excel workbooks.
 
 ## What does this app do?
 
