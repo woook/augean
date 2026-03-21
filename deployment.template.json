@@ -1,0 +1,8 @@
+{
+  "config_dir": "configs/",
+  "output_dir": "/path/to/error-output/",
+  "db_schema": "testdirectory",
+  "db_table": "inca",
+  "db_workbooks_table": "staging_workbooks",
+  "organisation": "CUH"
+}

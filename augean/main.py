@@ -14,19 +14,23 @@ from augean.errors import AmbiguousWorkbookFormatError, SchemaMismatchError, Wor
 log = logging.getLogger(__name__)
 
 
+_DEPLOYMENT_KEYS = {"config_dir", "output_dir", "organisation", "db_schema", "db_table", "db_workbooks_table"}
+
+
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(
         description="Augean: config-driven Excel workbook staging extractor"
     )
+    ap.add_argument("--deployment", help="Path to deployment config JSON")
     ap.add_argument("--db_credentials", required=True, help="Path to JSON with DB credentials")
-    ap.add_argument("--config_dir", required=True, help="Path to configs/ directory")
+    ap.add_argument("--config_dir", default=None, help="Path to configs/ directory")
 
     group = ap.add_mutually_exclusive_group(required=True)
     group.add_argument("--workbooks_path", help="Directory containing .xlsx workbooks")
     group.add_argument("--samples_file", help="Text file with one workbook path per line")
 
-    ap.add_argument("--output_dir", required=True, help="Directory for error CSVs")
-    ap.add_argument("--organisation", choices=["CUH", "NUH"], help="Organisation label")
+    ap.add_argument("--output_dir", default=None, help="Directory for error CSVs")
+    ap.add_argument("--organisation", default=None, choices=["CUH", "NUH"], help="Organisation label")
     ap.add_argument("--dry_run", action="store_true", help="Parse only, no DB writes")
     ap.add_argument("--migrate", action="store_true", help="Add missing DB columns before inserting")
     ap.add_argument(
@@ -40,10 +44,39 @@ def parse_args() -> argparse.Namespace:
         default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
     )
-    ap.add_argument("--db_table", default="inca", help="Target DB table name")
-    ap.add_argument("--db_schema", default="testdirectory", help="Target DB schema")
-    ap.add_argument("--db_workbooks_table", default="staging_workbooks", help="Workbook tracking table name")
-    return ap.parse_args()
+    ap.add_argument("--db_table", default=None, help="Target DB table name (overrides deployment config)")
+    ap.add_argument("--db_schema", default=None, help="Target DB schema (overrides deployment config)")
+    ap.add_argument("--db_workbooks_table", default=None, help="Workbook tracking table name (overrides deployment config)")
+    args = ap.parse_args()
+    _apply_deployment_config(args)
+    return args
+
+
+def _apply_deployment_config(args: argparse.Namespace) -> None:
+    """Load deployment config and fill in any args not set on the CLI."""
+    deployment = {}
+    if args.deployment:
+        with open(args.deployment) as f:
+            deployment = json.load(f)
+
+    # Deployment config fills in; CLI flags override
+    for key in _DEPLOYMENT_KEYS:
+        if getattr(args, key, None) is None:
+            setattr(args, key, deployment.get(key))
+
+    # Final fallback defaults
+    if args.db_schema is None:
+        args.db_schema = "testdirectory"
+    if args.db_table is None:
+        args.db_table = "inca"
+    if args.db_workbooks_table is None:
+        args.db_workbooks_table = "staging_workbooks"
+
+    missing = [f"--{k}" for k in ("config_dir", "output_dir") if getattr(args, k, None) is None]
+    if missing:
+        raise SystemExit(
+            f"error: the following arguments are required (via CLI or deployment config): {', '.join(missing)}"
+        )
 
 
 def main() -> None:
