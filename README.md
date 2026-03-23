@@ -6,9 +6,21 @@ Config-driven extractor for variant classification Excel workbooks.
 
 Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validates their structure and content against a format-specific config, normalises the extracted data, and loads variant records into a PostgreSQL staging database ready for ClinVar submission. It generalises the extraction layer originally developed in the Pandora tool so that new workbook formats can be supported by writing a JSON config rather than modifying code.
 
+## Developer documentation
+
+| Document | Description |
+|----------|-------------|
+| [`docs/architecture.md`](docs/architecture.md) | System overview, pipeline, module responsibilities, key design decisions |
+| [`docs/config-guide.md`](docs/config-guide.md) | How to write and extend format configs |
+| [`docs/testing.md`](docs/testing.md) | Full test suite reference |
+
+---
+
+> **Note:** RD Dias workbook parsing is currently non-functional. The `rd_dias_v1` config and its supporting code are present in the repository but have not been validated against the live database schema. Do not use RD Dias processing in production until this has been reviewed and tested end-to-end.
+
 ## Typical use cases
 
-- **Rare Disease (RD Dias) germline variant submissions** — batch-process interpretation workbooks from CUH or NUH laboratories, each containing a `summary` sheet, an `included` variants table, and one or more `interpret_*` ACGS-classification sheets.
+- **Rare Disease (RD Dias) germline variant submissions** — batch-process interpretation workbooks from CUH or NUH laboratories, each containing a `summary` sheet, an `included` variants table, and one or more `interpret_*` ACGS-classification sheets. *(Currently non-functional — see note above.)*
 - **HaemOnc (Uranus) somatic variant submissions** — process haematology oncology workbooks whose summary data is stored as labelled key-value pairs and whose variant table uses an `included` sheet with a somatic classification column.
 - **Dry-run validation** — parse and validate workbooks without writing anything to the database; useful for quality-checking new workbook versions before production runs.
 - **Adding a new workbook format** — write a JSON config describing the fingerprint, sheet layouts, field mappings, validations, and normalisations; no code changes required.
