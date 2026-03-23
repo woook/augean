@@ -12,7 +12,7 @@
     "summary": {
       "extraction_type": "named_cells",
       "fields": [
-        { "db_column": "sample_id",           "cell": "B1", "required": true },
+        { "db_column": "sample_id",           "cell": "B1", "required": true, "parse": "sample_id_split" },
         { "db_column": "clinical_indication",  "cell": "F1", "required": true,
           "parse": "clinical_indication_split" },
         { "db_column": "panel",               "cell": "F2" },

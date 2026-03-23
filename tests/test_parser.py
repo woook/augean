@@ -173,6 +173,26 @@ class TestExtractNamedCells:
         df = extract_named_cells(wb, "summary", config)
         assert str(df["date_last_evaluated"][0]) == "2024-07-10"
 
+    def test_sample_id_split(self):
+        wb = MagicMock()
+        sheet = self._make_sheet_with_cells({
+            "B1": "100033006-22363S0007-23NGSHO1-8128-M-96527893"
+        })
+        wb.__getitem__ = lambda s, k: sheet
+
+        config = {
+            "fields": [
+                {"db_column": "sample_id", "cell": "B1", "parse": "sample_id_split"}
+            ]
+        }
+        df = extract_named_cells(wb, "summary", config)
+        assert df["instrument_id"][0] == "100033006"
+        assert df["specimen_id"][0] == "22363S0007"
+        assert df["batch_id"][0] == "23NGSHO1"
+        assert df["test_code"][0] == "8128"
+        assert df["probeset_id"][0] == "96527893"
+        assert "sample_id" not in df.columns
+
 
 # ---------------------------------------------------------------------------
 # extract_label_scan
@@ -245,6 +265,28 @@ class TestExtractLabelScan:
         }
         df = extract_label_scan(wb, "summary", config)
         assert str(df["date_last_evaluated"][0]) == "2024-07-10"
+
+    def test_sample_id_split(self):
+        wb = self._make_wb(
+            ["Sample ID", "M-code"],
+            {"B1": "100033006-22363S0007-23NGSHO1-8128-M-96527893", "B2": "M87"},
+        )
+        config = {
+            "scan_column": "A",
+            "value_column": "B",
+            "fields": [
+                {"db_column": "sample_id", "label": "Sample ID", "parse": "sample_id_split"},
+                {"db_column": "panel", "label": "M-code"},
+            ],
+        }
+        df = extract_label_scan(wb, "summary", config)
+        assert df["instrument_id"][0] == "100033006"
+        assert df["specimen_id"][0] == "22363S0007"
+        assert df["batch_id"][0] == "23NGSHO1"
+        assert df["test_code"][0] == "8128"
+        assert df["probeset_id"][0] == "96527893"
+        assert df["panel"][0] == "M87"
+        assert "sample_id" not in df.columns
 
 
 # ---------------------------------------------------------------------------
@@ -384,7 +426,7 @@ class TestParseWorkbook:
         assert len(df) == 2
         assert "hgvsc" in df.columns
         assert "germline_classification" in df.columns
-        assert "sample_id" in df.columns
+        assert "specimen_id" in df.columns
         assert "institution" in df.columns
 
     def test_rd_dias_constant_fields(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
@@ -413,7 +455,7 @@ class TestParseWorkbook:
         assert isinstance(df, pd.DataFrame)
         assert len(df) > 0
         assert "hgvsc" in df.columns
-        assert "sample_id" in df.columns
+        assert "specimen_id" in df.columns
         assert "allele_origin" in df.columns
 
     def test_haemonc_allele_origin_somatic(self, haemonc_workbook, haemonc_path, haemonc_config):
@@ -444,6 +486,6 @@ def test_haemonc_workbook_smoke(xlsx_path, haemonc_config):
         mock_time.sleep = MagicMock()
         df = parse_workbook(wb, haemonc_config, xlsx_path)
     assert not df.empty
-    assert "sample_id" in df.columns
+    assert "specimen_id" in df.columns
     assert "hgvsc" in df.columns
     assert "allele_origin" in df.columns

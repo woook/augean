@@ -14,7 +14,7 @@
       "scan_column": "A",
       "value_column": "B",
       "fields": [
-        { "db_column": "sample_id",              "label": "Sample ID",         "required": true },
+        { "db_column": "sample_id",              "label": "Sample ID",         "required": true, "parse": "sample_id_split" },
         { "db_column": "date_last_evaluated",    "label": "Date",              "type": "date",
           "default": "today" },
         { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
@@ -31,7 +31,7 @@
         { "source": "SYMBOL",                   "db_column": "gene_symbol" },
         { "source": "HGVSc",                    "db_column": "hgvsc" },
         { "source": "Consequence",              "db_column": "consequence" },
-        { "source": "AF",                       "db_column": "allele_frequency" },
+        { "source": "AF",                       "db_column": "vaf" },
         { "source": "Classification",           "db_column": "germline_classification" },
         { "source": "Latest Classification Date","db_column": "prev_classification_date",
           "type": "date" },
