@@ -12,8 +12,8 @@
     "summary": {
       "extraction_type": "named_cells",
       "fields": [
-        { "db_column": "sample_id",           "cell": "B1", "required": true, "parse": "sample_id_split" },
-        { "db_column": "clinical_indication",  "cell": "F1", "required": true,
+        { "db_column": "sample_id",           "cell": "B1", "parse": "sample_id_split" },
+        { "db_column": "clinical_indication",  "cell": "F1",
           "parse": "clinical_indication_split" },
         { "db_column": "panel",               "cell": "F2" },
         { "db_column": "date_last_evaluated", "cell": "G22", "type": "date",
@@ -53,8 +53,8 @@
         { "db_column": "associated_disease",      "cell": "C4" },
         { "db_column": "known_inheritance",       "cell": "C5" },
         { "db_column": "prevalence",              "cell": "C6" },
-        { "db_column": "hgvsc",                   "cell": "C3", "required": true },
-        { "db_column": "germline_classification", "cell": "C26", "required": true },
+        { "db_column": "hgvsc",                   "cell": "C3" },
+        { "db_column": "germline_classification", "cell": "C26" },
         { "db_column": "pvs1",                    "cell": "H10" },
         { "db_column": "pvs1_evidence",           "cell": "C10" },
         { "db_column": "ps1",                     "cell": "H11" },
