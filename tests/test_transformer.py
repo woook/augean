@@ -6,10 +6,31 @@ import pytest
 from augean.transformer import (
     apply_derived_fields,
     apply_normalisations,
+    apply_null_sentinels,
     build_acgs_comment,
     make_acgs_criteria_null,
     transform,
 )
+
+
+class TestApplyNullSentinels:
+    def test_replaces_dot_with_nan(self):
+        df = pd.DataFrame({"hgvsp": ["NM_1:c.1A>T", "."], "vaf": ["0.5", "."]})
+        result = apply_null_sentinels(df, [".", "./."])
+        assert result["hgvsp"][0] == "NM_1:c.1A>T"
+        assert pd.isna(result["hgvsp"][1])
+        assert pd.isna(result["vaf"][1])
+
+    def test_replaces_slash_dot_with_nan(self):
+        df = pd.DataFrame({"prev_count": ["665/1706", "./."]})
+        result = apply_null_sentinels(df, [".", "./."])
+        assert result["prev_count"][0] == "665/1706"
+        assert pd.isna(result["prev_count"][1])
+
+    def test_empty_sentinels_noop(self):
+        df = pd.DataFrame({"x": [".", "./.", "value"]})
+        result = apply_null_sentinels(df, [])
+        assert list(result["x"]) == [".", "./.", "value"]
 
 
 class TestApplyNormalisations:

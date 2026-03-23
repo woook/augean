@@ -7,6 +7,13 @@ import pandas as pd
 log = logging.getLogger(__name__)
 
 
+def apply_null_sentinels(df: pd.DataFrame, sentinels: list) -> pd.DataFrame:
+    """Replace sentinel null values (e.g. '.', './.') with NaN across all columns."""
+    if not sentinels:
+        return df
+    return df.replace(sentinels, np.nan)
+
+
 def apply_normalisations(df: pd.DataFrame, normalisations: list) -> pd.DataFrame:
     """Apply replace-map normalisations to specified fields."""
     for norm in normalisations:
@@ -77,7 +84,8 @@ def apply_derived_fields(df: pd.DataFrame, derived_fields: list[dict]) -> pd.Dat
 
 
 def transform(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Orchestrate: normalisations → ACGS null → derived fields."""
+    """Orchestrate: null sentinels → normalisations → ACGS null → derived fields."""
+    df = apply_null_sentinels(df, config.get("null_sentinels", []))
     df = apply_normalisations(df, config.get("normalisations", []))
 
     acgs_config = config.get("validations", {}).get("acgs", {})
