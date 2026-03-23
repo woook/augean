@@ -18,6 +18,7 @@ def extract_named_cells(workbook, sheet_name: str, sheet_config: dict) -> pd.Dat
     - Regular cell references (cell address → db_column)
     - sentinel_scan: scan a column for a label, read adjacent cell
     - clinical_indication_split parse type: produces preferred_condition_name + r_code
+    - sample_id_split parse type: produces instrument_id, specimen_id, batch_id, test_code, probeset_id
     """
     sheet = workbook[sheet_name]
     row: dict = {}
@@ -43,6 +44,10 @@ def extract_named_cells(workbook, sheet_name: str, sheet_config: dict) -> pd.Dat
             row["preferred_condition_name"] = names
             row["r_code"] = codes
             # db_col itself is not stored; split produces the above two columns
+            continue
+
+        if field.get("parse") == "sample_id_split":
+            row.update(_split_sample_id(cell_val))
             continue
 
         if cell_val is None:
@@ -86,6 +91,10 @@ def extract_label_scan(workbook, sheet_name: str, sheet_config: dict) -> pd.Data
         if cell_val is None:
             default = field.get("default")
             cell_val = str(date.today()) if default == "today" else default
+
+        if field.get("parse") == "sample_id_split":
+            row.update(_split_sample_id(cell_val))
+            continue
 
         row[db_col] = cell_val
 
@@ -241,6 +250,20 @@ def _sentinel_scan(sheet, scan_column: str, sentinel_value: str, value_column: s
         if cell.value == sentinel_value:
             return sheet[f"{value_column}{cell.row}"].value
     return default
+
+
+def _split_sample_id(raw_value) -> dict:
+    """Split a composite sample ID into component fields.
+
+    Format: [InstrumentID]-[SpecimenID]-[BatchID]-[Testcode]-[Sex]-[ProbesetID]
+    e.g. 100033006-22363S0007-23NGSHO1-8128-M-96527893
+    Sex (index 4) is ignored — no db column.
+    """
+    if raw_value is None:
+        return {}
+    parts = str(raw_value).split("-", 5)
+    keys = ["instrument_id", "specimen_id", "batch_id", "test_code", None, "probeset_id"]
+    return {k: v for k, v in zip(keys, parts) if k is not None}
 
 
 def _split_clinical_indication(raw_value) -> tuple[str, str]:
