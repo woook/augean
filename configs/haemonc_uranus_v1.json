@@ -32,7 +32,7 @@
         { "source": "HGVSc",                    "db_column": "hgvsc" },
         { "source": "Consequence",              "db_column": "consequence" },
         { "source": "AF",                       "db_column": "vaf" },
-        { "source": "Classification",           "db_column": "germline_classification" },
+        { "source": "Classification",           "db_column": "oncogenicity_classification" },
         { "source": "Latest Classification Date","db_column": "prev_classification_date",
           "type": "date" },
         { "source": "Comment",                  "db_column": "classification_comment" },
@@ -57,7 +57,7 @@
   },
 
   "normalisations": [
-    { "field": "germline_classification", "replace": {
+    { "field": "oncogenicity_classification", "replace": {
         "Likely_pathogenic":       "Likely pathogenic",
         "Uncertain_significance":  "Uncertain significance",
         "Likely_oncogenic":        "Likely oncogenic",
@@ -67,7 +67,7 @@
 
   "validations": {
     "field": [
-      { "field": "germline_classification", "type": "in_list",
+      { "field": "oncogenicity_classification", "type": "in_list",
         "values": [
           "Pathogenic", "Likely pathogenic", "Likely_pathogenic",
           "Uncertain significance", "Uncertain_significance",
