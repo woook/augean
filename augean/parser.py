@@ -146,6 +146,9 @@ def extract_tabular(
             if source in df.columns:
                 df[db_col] = df[source]
 
+    for key, val in sheet_config.get("constant_fields", {}).items():
+        df[key] = val
+
     return df
 
 
@@ -217,6 +220,9 @@ def parse_workbook(workbook, config: dict, filename: Path) -> pd.DataFrame:
             log.debug("Extracted label_scan sheet '%s': %d fields", sheet_key, len(summary_df.columns))
 
         elif extraction_type == "tabular":
+            if sheet_key not in workbook.sheetnames:
+                log.debug("Sheet '%s' not present in workbook, skipping", sheet_key)
+                continue
             df = extract_tabular(workbook, sheet_key, sheet_config, filename)
             included_dfs.append(df)
             log.debug("Extracted tabular sheet '%s': %d rows", sheet_key, len(df))
