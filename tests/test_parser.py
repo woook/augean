@@ -465,6 +465,136 @@ class TestParseWorkbook:
 
         assert df["allele_origin"].unique()[0] == "somatic"
 
+    def test_haemonc_variant_category_column_present(self, haemonc_workbook, haemonc_path, haemonc_config):
+        with patch.object(parser, "time") as mock_time:
+            mock_time.sleep = MagicMock()
+            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+
+        assert "variant_category" in df.columns
+        assert df["variant_category"].notna().all()
+
+    def test_haemonc_allele_origin_still_somatic_after_pindel(self, haemonc_workbook, haemonc_path, haemonc_config):
+        """Regression: top-level constant_fields broadcast to all rows including pindel."""
+        with patch.object(parser, "time") as mock_time:
+            mock_time.sleep = MagicMock()
+            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+
+        assert (df["allele_origin"] == "somatic").all()
+
+
+# ---------------------------------------------------------------------------
+# pindel sheet extraction (TDD — written before implementation)
+# ---------------------------------------------------------------------------
+
+_MINIMAL_TWO_SHEET_CONFIG = {
+    "sheets": {
+        "included": {
+            "extraction_type": "tabular",
+            "constant_fields": {"variant_category": "included"},
+            "columns": [{"source": "CHROM", "db_column": "chromosome"}],
+            "generated_columns": [],
+        },
+        "pindel": {
+            "extraction_type": "tabular",
+            "constant_fields": {"variant_category": "pindel"},
+            "columns": [{"source": "CHROM", "db_column": "chromosome"}],
+            "generated_columns": [],
+        },
+    },
+    "merge_strategy": {"summary_x_included": {"how": "cross"}},
+    "constant_fields": {"allele_origin": "somatic"},
+}
+
+
+class TestExtractTabularConstantFields:
+    """sheet-level constant_fields in extract_tabular."""
+
+    def test_constant_fields_absent_no_extra_column(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
+        """Baseline: config without constant_fields produces no variant_category column."""
+        sheet_config = rd_dias_config["sheets"]["included"]
+        assert "constant_fields" not in sheet_config
+        with patch.object(parser, "time") as mock_time:
+            mock_time.sleep = MagicMock()
+            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        assert "variant_category" not in df.columns
+
+    def test_constant_fields_stamped_on_all_rows(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
+        """Sheet-level constant_fields adds the column with the given value on every row."""
+        sheet_config = {**rd_dias_config["sheets"]["included"],
+                        "constant_fields": {"variant_category": "included"}}
+        with patch.object(parser, "time") as mock_time:
+            mock_time.sleep = MagicMock()
+            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        assert "variant_category" in df.columns
+        assert (df["variant_category"] == "included").all()
+
+    def test_multiple_constant_fields_all_added(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
+        """Multiple keys in constant_fields all appear as columns."""
+        sheet_config = {**rd_dias_config["sheets"]["included"],
+                        "constant_fields": {"variant_category": "included", "source_caller": "gatk"}}
+        with patch.object(parser, "time") as mock_time:
+            mock_time.sleep = MagicMock()
+            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        assert (df["variant_category"] == "included").all()
+        assert (df["source_caller"] == "gatk").all()
+
+
+class TestParseWorkbookPindel:
+    """parse_workbook pindel concatenation behaviour."""
+
+    def _mock_wb(self, sheetnames):
+        wb = MagicMock()
+        wb.sheetnames = sheetnames
+        return wb
+
+    def _read_excel_side_effect(self, included_rows=3, pindel_rows=2):
+        def _side_effect(file, sheet_name, usecols=None, nrows=None):
+            n = included_rows if sheet_name == "included" else pindel_rows
+            return pd.DataFrame({"CHROM": [str(i) for i in range(n)]})
+        return _side_effect
+
+    def test_pindel_rows_concatenated_with_included(self):
+        wb = self._mock_wb(["included", "pindel"])
+        with patch("augean.parser.pd.read_excel", side_effect=self._read_excel_side_effect(3, 2)):
+            df = parse_workbook(wb, _MINIMAL_TWO_SHEET_CONFIG, Path("fake.xlsx"))
+        assert len(df) == 5
+
+    def test_variant_category_values_correct_per_source(self):
+        wb = self._mock_wb(["included", "pindel"])
+        with patch("augean.parser.pd.read_excel", side_effect=self._read_excel_side_effect(3, 2)):
+            df = parse_workbook(wb, _MINIMAL_TWO_SHEET_CONFIG, Path("fake.xlsx"))
+        assert set(df["variant_category"].unique()) == {"included", "pindel"}
+        assert (df["variant_category"] == "included").sum() == 3
+        assert (df["variant_category"] == "pindel").sum() == 2
+
+    def test_pindel_absent_workbook_still_parses(self):
+        """If pindel sheet is not in workbook.sheetnames, parsing continues without error."""
+        wb = self._mock_wb(["included"])  # no pindel
+        with patch("augean.parser.pd.read_excel", side_effect=self._read_excel_side_effect(3, 0)):
+            df = parse_workbook(wb, _MINIMAL_TWO_SHEET_CONFIG, Path("fake.xlsx"))
+        assert len(df) == 3
+        assert (df["variant_category"] == "included").all()
+
+    def test_top_level_constant_fields_present_on_all_rows(self):
+        """Top-level constant_fields (e.g. allele_origin) broadcast to both included and pindel rows."""
+        wb = self._mock_wb(["included", "pindel"])
+        with patch("augean.parser.pd.read_excel", side_effect=self._read_excel_side_effect(3, 2)):
+            df = parse_workbook(wb, _MINIMAL_TWO_SHEET_CONFIG, Path("fake.xlsx"))
+        assert (df["allele_origin"] == "somatic").all()
+
+
+# ---------------------------------------------------------------------------
+# Smoke test: pindel sheet exists in test workbook
+# ---------------------------------------------------------------------------
+
+def test_haemonc_smoke_pindel_sheet_present():
+    """Precondition: the canonical HaemOnc test workbook has a pindel sheet."""
+    import openpyxl
+    wb = openpyxl.load_workbook(
+        WORKBOOKS_DIR / "haemonc" / "haemonc.xlsx", read_only=True, data_only=True
+    )
+    assert "pindel" in wb.sheetnames, "Test workbook must have a pindel sheet for pindel extraction tests"
+
 
 # ---------------------------------------------------------------------------
 # Smoke tests: all HaemOnc workbooks in test_data parse without error
