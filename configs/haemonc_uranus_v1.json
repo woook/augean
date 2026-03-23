@@ -33,7 +33,7 @@
         { "source": "Consequence",              "db_column": "consequence" },
         { "source": "AF",                       "db_column": "vaf" },
         { "source": "Classification",           "db_column": "oncogenicity_classification" },
-        { "source": "Latest Classification Date","db_column": "prev_classification_date",
+        { "source": "Latest Classification Date","db_column": "latest_classification_date",
           "type": "date" },
         { "source": "Comment",                  "db_column": "classification_comment" },
         { "source": "Interpreted",              "db_column": "interpreted",
