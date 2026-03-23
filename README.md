@@ -168,30 +168,46 @@ Run the full test suite:
 pytest
 ```
 
+130 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+
 ### Test structure
 
-| Module | What it covers |
-|---|---|
-| `test_config.py` | Config loading, fingerprint matching, format auto-detection |
-| `test_loader.py` | Workbook opening, format identification |
-| `test_parser.py` | All extraction types (`named_cells`, `label_scan`, `tabular`, `named_cells_multi`, `sentinel_scan`), merge logic, `parse_workbook` integration |
-| `test_validator.py` | Structural, field, cross-sheet and ACGS validators |
-| `test_transformer.py` | Normalisations, ACGS criteria nulling, comment building |
-| `test_db.py` | SQLAlchemy staging insert/upsert operations |
-| `test_main.py` | CLI entry point |
+| Module | Tests | What it covers |
+|---|---|---|
+| `test_config.py` | 20 | Config loading, fingerprint rule types, format auto-detection against real workbooks |
+| `test_db.py` | 14 | SQLAlchemy insert/status/migrate operations |
+| `test_loader.py` | 6 | Workbook opening, format identification |
+| `test_parser.py` | 29 | All extraction types, split parse types, merge logic, real-workbook integration |
+| `test_transformer.py` | 19 | Null sentinels, normalisations, ACGS criteria nulling, comment building |
+| `test_validator.py` | 15 | Structural, field, cross-sheet, and ACGS validators |
+| `test_main.py` | 22 | CLI pipeline: dry run, deployment config, all error paths, DB write path |
 
-Most parser and validator tests use mock workbooks built in-memory. Integration tests in `test_parser.py` and `test_validator.py` run against real workbooks in `tests/test_data/workbooks/`.
+Most tests use mock workbooks built in-memory. Integration tests in `test_parser.py` and `test_main.py` run against real workbooks in `tests/test_data/workbooks/` (gitignored).
+
+### Running in parallel
+
+The test suite can be parallelised by file group for faster feedback:
+
+```bash
+pytest tests/test_config.py tests/test_db.py tests/test_loader.py \
+       tests/test_transformer.py tests/test_validator.py &
+pytest tests/test_parser.py &
+pytest tests/test_main.py &
+wait
+```
+
+Wall clock time: ~34s (vs ~215s sequential).
 
 ### HaemOnc smoke tests
 
-`test_parser.py` contains a parametrized smoke test that runs against every `.xlsx` file in `tests/test_data/workbooks/haemonc/`. It asserts that each workbook parses without error and produces a non-empty DataFrame with the expected columns.
+`test_parser.py` contains a parametrized smoke test that runs against every `.xlsx` in `tests/test_data/workbooks/haemonc/`. It asserts each workbook parses without error and produces a non-empty DataFrame.
 
 To add a new workbook to smoke testing:
 
 1. Copy the file into `tests/test_data/workbooks/haemonc/`
 2. Inspect the output using dry-run:
    ```bash
-   python -m augean.main \
+   augean \
      --deployment /path/to/deployment.json \
      --db_credentials /path/to/creds.json \
      --workbooks_path tests/test_data/workbooks/haemonc/ \
@@ -202,4 +218,4 @@ To add a new workbook to smoke testing:
    pytest tests/test_parser.py::test_haemonc_workbook_smoke -v
    ```
 
-No test code changes are needed — the parametrized test picks up any new `.xlsx` in that directory automatically.
+No test code changes are needed — the parametrized test picks up any new `.xlsx` automatically.
