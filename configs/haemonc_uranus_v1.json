@@ -17,8 +17,8 @@
         { "db_column": "sample_id",              "label": "Sample ID",         "required": true, "parse": "sample_id_split" },
         { "db_column": "date_last_evaluated",    "label": "Date",              "type": "date",
           "default": "today" },
-        { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
-        { "db_column": "panel",                  "label": "M-code" },
+        { "db_column": "panel",                  "label": "Subpanel analysed" },
+        { "db_column": "m_code",                 "label": "M-code" },
         { "db_column": "ref_genome",             "label": "Reference:",        "default": "not_defined" }
       ]
     },
@@ -36,6 +36,12 @@
         { "source": "Latest Classification Date","db_column": "latest_classification_date",
           "type": "date" },
         { "source": "Comment",                  "db_column": "classification_comment" },
+        { "source": "HGVSp",                    "db_column": "hgvsp" },
+        { "source": "FILTER",                   "db_column": "vcf_filter" },
+        { "source": "Prev Count",               "db_column": "prev_count" },
+        { "source": "Latest Classification",    "db_column": "latest_classification" },
+        { "source": "Total Classifications",    "db_column": "total_classifications" },
+        { "source": "Reported",                 "db_column": "reported" },
         { "source": "Interpreted",              "db_column": "interpreted",
           "transform": "boolean_to_yes_no" }
       ],
@@ -55,6 +61,8 @@
     "allele_origin":     "somatic",
     "affected_status":   "yes"
   },
+
+  "null_sentinels": [".", "./."],
 
   "normalisations": [
     { "field": "oncogenicity_classification", "replace": {
