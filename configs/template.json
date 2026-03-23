@@ -16,7 +16,7 @@
     "summary": {
       "extraction_type": "named_cells",
       "fields": [
-        { "db_column": "sample_id",           "cell": "B1", "required": true },
+        { "db_column": "sample_id",           "cell": "B1" },
         { "db_column": "panel",               "cell": "F2" },
         { "db_column": "date_last_evaluated", "cell": "G22", "type": "date", "default": "today" },
         { "db_column": "clinical_indication",  "cell": "F1", "parse": "clinical_indication_split" },
@@ -38,7 +38,7 @@
       "scan_column": "A",
       "value_column": "B",
       "fields": [
-        { "db_column": "sample_id",              "label": "Sample ID",       "required": true },
+        { "db_column": "sample_id",              "label": "Sample ID" },
         { "db_column": "date_last_evaluated",    "label": "Date",            "type": "date", "default": "today" },
         { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
         { "db_column": "ref_genome",             "label": "Reference:",      "default": "not_defined" }
@@ -73,8 +73,8 @@
       "extraction_type": "named_cells_multi",
       "sheet_pattern": "^interpret",
       "fields": [
-        { "db_column": "hgvsc",                   "cell": "C3", "required": true },
-        { "db_column": "germline_classification", "cell": "C26", "required": true }
+        { "db_column": "hgvsc",                   "cell": "C3" },
+        { "db_column": "germline_classification", "cell": "C26" }
       ]
     }
 

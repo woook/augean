@@ -14,12 +14,11 @@
       "scan_column": "A",
       "value_column": "B",
       "fields": [
-        { "db_column": "sample_id",              "label": "Sample ID",         "required": true, "parse": "sample_id_split" },
-        { "db_column": "date_last_evaluated",    "label": "Date",              "type": "date",
-          "default": "today" },
-        { "db_column": "panel",                  "label": "Subpanel analysed" },
-        { "db_column": "m_code",                 "label": "M-code" },
-        { "db_column": "ref_genome",             "label": "Reference:",        "default": "not_defined" }
+        { "label": "Sample ID",         "db_column": "sample_id",              "parse": "sample_id_split" },
+        { "label": "Date",             "db_column": "date_last_evaluated" },
+        { "label": "Subpanel analysed","db_column": "panel" },
+        { "label": "M-code",           "db_column": "m_code" },
+        { "label": "Reference:",       "db_column": "ref_genome" }
       ]
     },
 
@@ -33,8 +32,7 @@
         { "source": "Consequence",              "db_column": "consequence" },
         { "source": "AF",                       "db_column": "vaf" },
         { "source": "Classification",           "db_column": "oncogenicity_classification" },
-        { "source": "Latest Classification Date","db_column": "latest_classification_date",
-          "type": "date" },
+        { "source": "Latest Classification Date","db_column": "latest_classification_date" },
         { "source": "Comment",                  "db_column": "classification_comment" },
         { "source": "HGVSp",                    "db_column": "hgvsp" },
         { "source": "FILTER",                   "db_column": "vcf_filter" },
@@ -42,8 +40,7 @@
         { "source": "Latest Classification",    "db_column": "latest_classification" },
         { "source": "Total Classifications",    "db_column": "total_classifications" },
         { "source": "Reported",                 "db_column": "reported" },
-        { "source": "Interpreted",              "db_column": "interpreted",
-          "transform": "boolean_to_yes_no" }
+        { "source": "Interpreted",              "db_column": "interpreted" }
       ],
       "generated_columns": [
         { "db_column": "local_id",   "generation": "uuid_time" },
@@ -66,10 +63,9 @@
 
   "normalisations": [
     { "field": "oncogenicity_classification", "replace": {
-        "Likely_pathogenic":       "Likely pathogenic",
-        "Uncertain_significance":  "Uncertain significance",
-        "Likely_oncogenic":        "Likely oncogenic",
-        "Uncertain_significance_oncogenic": "Uncertain significance (oncogenic)"
+        "Likely_oncogenic":       "Likely oncogenic",
+        "Uncertain_significance": "Uncertain significance",
+        "Likely_benign":          "Likely benign"
     }}
   ],
 
@@ -77,14 +73,10 @@
     "field": [
       { "field": "oncogenicity_classification", "type": "in_list",
         "values": [
-          "Pathogenic", "Likely pathogenic", "Likely_pathogenic",
-          "Uncertain significance", "Uncertain_significance",
-          "Likely benign", "Benign",
-          "Oncogenic", "Likely oncogenic", "Likely_oncogenic",
-          "Uncertain significance (oncogenic)", "Uncertain_significance_oncogenic",
-          "Likely benign/Likely not oncogenic", "Benign/Not oncogenic"
-        ],
-        "required": false }
+          "Uncertain_significance",
+          "Likely_benign", "Benign",
+          "Oncogenic", "Likely_oncogenic"
+        ]}
     ]
   }
 }
