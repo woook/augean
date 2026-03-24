@@ -55,14 +55,25 @@ def parse_args() -> argparse.Namespace:
 def _apply_deployment_config(args: argparse.Namespace) -> None:
     """Load deployment config and fill in any args not set on the CLI."""
     deployment = {}
+    deployment_dir = None
     if args.deployment:
-        with open(args.deployment) as f:
+        deployment_path = Path(args.deployment)
+        deployment_dir = deployment_path.parent.resolve()
+        with deployment_path.open(encoding="utf-8") as f:
             deployment = json.load(f)
 
     # Deployment config fills in; CLI flags override
     for key in _DEPLOYMENT_KEYS:
         if getattr(args, key, None) is None:
-            setattr(args, key, deployment.get(key))
+            value = deployment.get(key)
+            if (
+                deployment_dir is not None
+                and key in {"config_dir", "output_dir"}
+                and value is not None
+                and not Path(value).is_absolute()
+            ):
+                value = str((deployment_dir / value).resolve())
+            setattr(args, key, value)
 
     # Final fallback defaults
     if args.db_schema is None:
@@ -191,14 +202,20 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
     db_cfg = cfg.get("db", {})
     table = db_cfg.get("table", args.db_table)
     schema = db_cfg.get("schema", args.db_schema)
-    if args.migrate:
-        db.migrate_schema(engine, final_df, table, schema)
     try:
+        if args.migrate:
+            db.migrate_schema(engine, final_df, table, schema)
         rows = db.add_variants(engine, final_df, table, schema)
     except SchemaMismatchError as exc:
         log.error("Schema mismatch for '%s': %s", wb_name, exc)
         db.mark_workbook_failed(engine, wb_name, [str(exc)], schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, [str(exc)])
+        return
+    except Exception as exc:
+        log.error("DB write failed for '%s': %s", wb_name, exc)
+        errors = [f"DB write error: {exc}"]
+        db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
+        _write_error_csv(output_dir, wb_name, errors)
         return
     log.info("Inserted %d row(s) for '%s'", rows, wb_name)
     db.mark_workbook_parsed(engine, wb_name, schema=wb_schema, workbooks_table=wb_table)

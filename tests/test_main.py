@@ -55,7 +55,7 @@ def test_main_dry_run_rd_dias(tmp_path, monkeypatch):
             "augean",
             "--db_credentials", str(tmp_path / "unused.json"),
             "--config_dir", str(CONFIGS_DIR),
-            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
             "--output_dir", str(tmp_path),
             "--dry_run",
         ],
