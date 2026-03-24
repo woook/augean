@@ -1,6 +1,6 @@
 # Test Suite Reference
 
-130 tests across 7 modules. All tests use pytest.
+140 tests across 7 modules (139 passing, 1 skipped when only one RD Dias workbook is present). All tests use pytest.
 
 ## Running tests
 
@@ -25,7 +25,7 @@ wait
 | `TestLoadConfigs` | Loads both configs from dir; validates required keys present; raises `ConfigValidationError` on missing key; handles empty dir |
 | `TestFingerprintEvaluation` | Each fingerprint rule type — `equals`, `matches_pattern`, `sheet_exists`, `sheet_pattern`, `has_columns` — pass and fail variants; all rules must match |
 | `TestGetConfigForWorkbook` | Raises `WorkbookFormatUnknownError` on unknown format; raises `AmbiguousWorkbookFormatError` on ambiguous match |
-| `TestRealWorkbookFingerprint` | **Real workbooks**: RD Dias (CUH), RD Dias (NUH), HaemOnc correctly auto-detected |
+| `TestRealWorkbookFingerprint` | **Anonymised workbooks**: RD Dias and HaemOnc correctly auto-detected |
 
 ---
 
@@ -51,7 +51,7 @@ wait
 
 ---
 
-## `test_parser.py` — 29 tests
+## `test_parser.py` — 39 tests
 
 | Class | Tests |
 |-------|-------|
@@ -60,9 +60,11 @@ wait
 | `TestExtractLabelScan` | Fields by label; missing label uses default; date default today; `sample_id_split` |
 | `TestExtractNamedCellsMulti` | One row per matching sheet; no matching sheets returns empty |
 | `TestExtractTabular` | RD Dias included sheet; lowercase transform; unique `local_id`; `linking_id` equals `local_id` |
+| `TestExtractTabularConstantFields` | Sheet-level `constant_fields` stamped on rows; multiple keys; no regression when absent |
 | `TestMergeDataframes` | Cross join then left join; no interpret sheet skips join |
-| `TestParseWorkbook` | **Real workbooks**: RD Dias shape/columns/constant fields/summary fields; HaemOnc shape/somatic allele_origin |
-| Smoke tests | Guard that test workbooks are present; parametrized smoke test for every HaemOnc `.xlsx` in `tests/test_data/workbooks/haemonc/` |
+| `TestParseWorkbook` | **Anonymised workbooks**: RD Dias shape/columns/constant fields; HaemOnc shape/somatic allele_origin/variant_category |
+| `TestParseWorkbookPindel` | Pindel rows concatenated with included; `variant_category` values per source; absent pindel sheet skipped gracefully; top-level constants broadcast to all rows |
+| Smoke tests | Guard that test workbooks are present; pindel sheet precondition; parametrized smoke test for every HaemOnc `.xlsx` in `tests/test_data/workbooks/haemonc/` |
 
 ### `sample_id_split` tests
 
@@ -87,7 +89,7 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ---
 
-## `test_validator.py` — 15 tests
+## `test_validator.py` — 20 tests
 
 | Class | Tests |
 |-------|-------|
@@ -146,16 +148,19 @@ An autouse fixture `mock_parser_sleep` patches `augean.parser.time.sleep` to a n
 
 ## Test data
 
-Real workbooks live in `tests/test_data/workbooks/` (gitignored — contains patient data):
+Anonymised workbooks (no patient data) are committed to the repo and used by CI:
 
 ```
 tests/test_data/workbooks/
   rd_dias/
-    cuh.xlsx
-    nuh.xlsx
+    148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)
   haemonc/
-    haemonc.xlsx
-    <additional workbooks for smoke testing>
+    999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx  ← committed (anonymised)
+    <additional workbooks for smoke testing — gitignored>
 ```
+
+Real patient workbooks placed in these directories are gitignored by pattern and will never be committed. The gitignore explicitly allowlists only the two anonymised filenames above.
+
+Tests that depend on workbook fixtures skip gracefully if the file is absent, so the suite remains runnable in any environment.
 
 Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed.

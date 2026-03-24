@@ -180,7 +180,7 @@ Run the full test suite:
 pytest
 ```
 
-130 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+140 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
 ### Test structure
 
@@ -189,12 +189,12 @@ pytest
 | `test_config.py` | 20 | Config loading, fingerprint rule types, format auto-detection against real workbooks |
 | `test_db.py` | 14 | SQLAlchemy insert/status/migrate operations |
 | `test_loader.py` | 6 | Workbook opening, format identification |
-| `test_parser.py` | 29 | All extraction types, split parse types, merge logic, real-workbook integration |
+| `test_parser.py` | 39 | All extraction types, split parse types, pindel sheet extraction, merge logic, real-workbook integration |
 | `test_transformer.py` | 19 | Null sentinels, normalisations, ACGS criteria nulling, comment building |
-| `test_validator.py` | 15 | Structural, field, cross-sheet, and ACGS validators |
+| `test_validator.py` | 20 | Structural, field, cross-sheet, and ACGS validators |
 | `test_main.py` | 22 | CLI pipeline: dry run, deployment config, all error paths, DB write path |
 
-Most tests use mock workbooks built in-memory. Integration tests in `test_parser.py` and `test_main.py` run against real workbooks in `tests/test_data/workbooks/` (gitignored).
+Most tests use mock workbooks built in-memory. Integration tests run against anonymised workbooks committed to `tests/test_data/workbooks/`. Real patient workbooks in that directory are gitignored.
 
 ### Running in parallel
 
