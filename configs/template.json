@@ -98,13 +98,13 @@
     {
       "db_column": "comment_on_classification",
       "type": "acgs_comment",
-      "criteria": ["pvs1", "ps1", "ps2", "pm1", "pm2", "pp1", "bs1", "bp1"],
+      "criteria": ["pvs1", "ps1", "ps2", "pm1", "pm2", "pp1", "ba1", "bs1", "bp1"],
       "matched_strength": {
         "PVS": "Very Strong",
         "PS":  "Strong",
         "PM":  "Moderate",
         "PP":  "Supporting",
-        "BS":  "Supporting",
+        "BS":  "Strong",
         "BA":  "Stand-Alone",
         "BP":  "Supporting"
       }
