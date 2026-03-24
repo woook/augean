@@ -10,10 +10,14 @@ pytest
 
 # Parallel by file group (~34s wall clock)
 pytest tests/test_config.py tests/test_db.py tests/test_loader.py \
-       tests/test_transformer.py tests/test_validator.py &
-pytest tests/test_parser.py &
-pytest tests/test_main.py &
-wait
+       tests/test_transformer.py tests/test_validator.py & p1=$!
+pytest tests/test_parser.py & p2=$!
+pytest tests/test_main.py & p3=$!
+status=0
+wait "$p1" || status=$?
+wait "$p2" || status=$?
+wait "$p3" || status=$?
+test "$status" -eq 0
 ```
 
 ---

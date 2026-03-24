@@ -316,7 +316,7 @@ Checks that each criterion cell contains a value from the allowed strength dropd
 2. Fill in `format_name` and `format_version`
 3. Define `fingerprint` rules that uniquely identify this format
 4. Define `sheets` with the appropriate `extraction_type` per sheet
-5. Map each workbook field to a `db_column` that exists in `testdirectory.inca`
+5. Map each workbook field to a `db_column` that exists in the configured variants table (default `testdirectory.inca`)
 6. Add `validations` for critical fields
 7. Add `normalisations` if raw values need cleaning
 8. Add `null_sentinels` if the source uses VCF-style null indicators
