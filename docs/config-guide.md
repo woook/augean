@@ -29,7 +29,9 @@ See `configs/template.json` for a fully annotated skeleton to copy from.
 
 ## Fingerprinting
 
-Fingerprint rules identify the format. **All rules must match** for the format to be selected.
+When augean opens a workbook, it needs to know which config to apply. It does this automatically by testing the workbook against a set of rules — the "fingerprint" — defined in each config. If all rules in a config's fingerprint match the workbook, that config is selected. If no config matches, or more than one matches, an error is raised.
+
+**All rules must match** for the format to be selected.
 
 ```json
 "fingerprint": [
@@ -53,7 +55,18 @@ Fingerprint rules identify the format. **All rules must match** for the format t
 
 ## Sheets
 
-Each key under `sheets` declares how to extract a sheet. The key is usually the sheet name (but for `named_cells_multi`, the actual sheet names are determined by `sheet_pattern` at runtime).
+Each workbook sheet that augean reads must declare an `extraction_type` in the config. This tells augean how to read it — different workbook layouts require different strategies. The key under `sheets` is usually the exact sheet name (except for `named_cells_multi`, where the actual sheet names are determined at runtime by a pattern).
+
+There are four extraction types:
+
+| Type | When to use |
+|------|-------------|
+| `named_cells` | Fields are at fixed, known cell addresses (e.g. sample ID always in B1) |
+| `label_scan` | Fields are stored as label/value pairs in a column (no fixed row positions) |
+| `tabular` | A columnar variant table read with `pd.read_excel` |
+| `named_cells_multi` | One row per sheet whose name matches a pattern (e.g. one interpret sheet per variant) |
+
+The sections below describe each type in detail.
 
 ### `named_cells` — fixed cell addresses
 

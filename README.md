@@ -113,6 +113,34 @@ When a workbook fails validation or parsing, a CSV is written to `--output_dir`:
 
 Columns: `workbook`, `error`. One row per error message.
 
+### Schema mismatch errors
+
+Before inserting, Augean compares the DataFrame columns against the columns present in the target PostgreSQL table. If any columns are missing, the workbook is marked as failed and a schema mismatch error is written to the error CSV:
+
+```
+Schema mismatch: The following columns are not present in testdirectory.inca
+and must be added before inserting: ['new_column']
+
+Run the following SQL to resolve:
+
+    ALTER TABLE testdirectory.inca ADD COLUMN new_column TEXT;
+
+Or re-run with --migrate to apply automatically.
+```
+
+This ensures that new config fields cannot silently go unrecorded — a schema change requires explicit action. To apply missing columns and insert in a single step, pass `--migrate`:
+
+```bash
+augean \
+  --db_credentials /path/to/creds.json \
+  --config_dir configs/ \
+  --workbooks_path /path/to/workbooks/ \
+  --output_dir /path/to/errors/ \
+  --migrate
+```
+
+Each column added is logged at `WARNING` level. Column types are inferred from the DataFrame dtype; adjust manually afterwards if a different type is required.
+
 ## Installation
 
 ```bash
@@ -139,38 +167,6 @@ augean \
   --workbooks_path /path/to/workbooks/ \
   --dry_run
 ```
-
-## Schema migration
-
-Before inserting, Augean compares the DataFrame columns against the columns present in the target PostgreSQL table. If any columns are missing, the workbook is marked as failed and an error is written to the error CSV containing the `ALTER TABLE` statements needed to resolve the mismatch:
-
-```
-Schema mismatch: The following columns are not present in testdirectory.inca
-and must be added before inserting: ['prev_classification_date']
-
-Run the following SQL to resolve:
-
-    ALTER TABLE testdirectory.inca ADD COLUMN prev_classification_date TEXT;
-
-Or re-run with --migrate to apply automatically.
-```
-
-This behaviour ensures that new config fields cannot silently go unrecorded — a schema change requires explicit action.
-
-### Automatic migration with `--migrate`
-
-To apply the schema changes and insert in a single step, pass `--migrate`:
-
-```bash
-augean \
-  --db_credentials /path/to/creds.json \
-  --config_dir configs/ \
-  --workbooks_path /path/to/workbooks/ \
-  --output_dir /path/to/errors/ \
-  --migrate
-```
-
-Each column added is logged at `WARNING` level so the change is always visible. Column types are inferred from the DataFrame dtype (`TEXT`, `NUMERIC`, `INTEGER`, or `DATE`); adjust the column type manually afterwards if a different type is required.
 
 ## Testing
 

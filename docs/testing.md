@@ -53,6 +53,12 @@ wait
 
 ## `test_parser.py` — 39 tests
 
+**Where to start depending on your goal:**
+- New to the codebase → `TestParseWorkbook` (integration tests against real workbooks) and the smoke tests
+- Debugging an extraction problem → the `TestExtract*` class matching the extraction type in question
+- Adding or modifying a config → `TestExtractTabular` + smoke tests
+- Pindel-specific work → `TestParseWorkbookPindel` + `test_haemonc_smoke_pindel_sheet_present`
+
 | Class | Tests |
 |-------|-------|
 | `TestSplitClinicalIndication` | Single indication; multiple semicolon-separated; `None` input; no underscore |
