@@ -15,19 +15,36 @@ CONFIGS_DIR = Path(__file__).parent.parent / "configs"
 # Real workbook fixtures
 # ---------------------------------------------------------------------------
 
+def _first_xlsx(directory: Path):
+    """Return the first .xlsx in directory, or None if absent."""
+    files = sorted(directory.glob("*.xlsx"))
+    return files[0] if files else None
+
+
+_RD_DIAS_XLSX = _first_xlsx(WORKBOOKS_DIR / "rd_dias")
+_HAEMONC_XLSX_PATH = _first_xlsx(WORKBOOKS_DIR / "haemonc")
+
+
 @pytest.fixture(scope="session")
 def rd_dias_cuh_path():
-    return WORKBOOKS_DIR / "rd_dias" / "cuh.xlsx"
+    if _RD_DIAS_XLSX is None:
+        pytest.skip("No RD Dias test workbook available")
+    return _RD_DIAS_XLSX
 
 
 @pytest.fixture(scope="session")
 def rd_dias_nuh_path():
-    return WORKBOOKS_DIR / "rd_dias" / "nuh.xlsx"
+    files = sorted((WORKBOOKS_DIR / "rd_dias").glob("*.xlsx"))
+    if len(files) < 2:
+        pytest.skip("No second RD Dias test workbook available")
+    return files[1]
 
 
 @pytest.fixture(scope="session")
 def haemonc_path():
-    return WORKBOOKS_DIR / "haemonc" / "haemonc.xlsx"
+    if _HAEMONC_XLSX_PATH is None:
+        pytest.skip("No HaemOnc test workbook available")
+    return _HAEMONC_XLSX_PATH
 
 
 @pytest.fixture(scope="session")

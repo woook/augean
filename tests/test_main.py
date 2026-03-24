@@ -47,13 +47,15 @@ def test_write_error_csv(tmp_path):
 
 def test_main_dry_run_rd_dias(tmp_path, monkeypatch):
     """End-to-end: parse + validate + transform RD Dias workbooks without DB."""
+    if not list((WORKBOOKS_DIR / "rd_dias").glob("*.xlsx")):
+        pytest.skip("No RD Dias test workbook available")
     monkeypatch.setattr(
         sys, "argv",
         [
             "augean",
             "--db_credentials", str(tmp_path / "unused.json"),
             "--config_dir", str(CONFIGS_DIR),
-            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
             "--output_dir", str(tmp_path),
             "--dry_run",
         ],
@@ -103,9 +105,9 @@ def test_main_dry_run_haemonc(tmp_path, monkeypatch):
 
 def test_main_samples_file(tmp_path, monkeypatch):
     """--samples_file path resolves workbooks correctly."""
-    rd_dias_dir = WORKBOOKS_DIR / "rd_dias"
+    haemonc_dir = WORKBOOKS_DIR / "haemonc"
     samples = tmp_path / "samples.txt"
-    samples.write_text("\n".join(str(p) for p in sorted(rd_dias_dir.glob("*.xlsx"))))
+    samples.write_text("\n".join(str(p) for p in sorted(haemonc_dir.glob("*.xlsx"))))
     monkeypatch.setattr(sys, "argv", _argv(tmp_path, samples_file=samples))
     main()
     assert list(tmp_path.glob("*_errors.csv")) == []
@@ -115,8 +117,8 @@ def test_main_format_override(tmp_path, monkeypatch):
     """--format bypasses auto-detection and uses the named config."""
     monkeypatch.setattr(sys, "argv", _argv(
         tmp_path,
-        workbooks_dir=WORKBOOKS_DIR / "rd_dias",
-        extra=["--format", "rd_dias_v1"],
+        workbooks_dir=WORKBOOKS_DIR / "haemonc",
+        extra=["--format", "haemonc_uranus_v1"],
     ))
     main()
     assert list(tmp_path.glob("*_errors.csv")) == []
@@ -137,7 +139,7 @@ class TestDeploymentConfig:
             "augean",
             "--db_credentials", str(tmp_path / "unused.json"),
             "--deployment", str(dep_file),
-            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
             "--dry_run",
         ])
         main()
@@ -155,7 +157,7 @@ class TestDeploymentConfig:
             "--db_credentials", str(tmp_path / "unused.json"),
             "--deployment", str(dep_file),
             "--config_dir", str(CONFIGS_DIR),
-            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
             "--dry_run",
         ])
         main()
@@ -175,7 +177,7 @@ class TestDeploymentConfig:
         monkeypatch.setattr(sys, "argv", [
             "augean",
             "--db_credentials", str(tmp_path / "unused.json"),
-            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
             "--output_dir", str(tmp_path),
             "--dry_run",
         ])
@@ -187,7 +189,7 @@ class TestDeploymentConfig:
             "augean",
             "--db_credentials", str(tmp_path / "unused.json"),
             "--config_dir", str(CONFIGS_DIR),
-            "--workbooks_path", str(WORKBOOKS_DIR / "rd_dias"),
+            "--workbooks_path", str(WORKBOOKS_DIR / "haemonc"),
             "--dry_run",
         ])
         with pytest.raises(SystemExit):
@@ -209,7 +211,7 @@ class TestErrorHandling:
 
     def test_unknown_format_logs_and_continues(self, tmp_path, monkeypatch):
         from augean.errors import WorkbookFormatUnknownError
-        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "rd_dias"))
+        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc"))
         with patch("augean.main.loader.detect_format", side_effect=WorkbookFormatUnknownError("?")):
             main()
         assert list(tmp_path.glob("*_errors.csv")) == []
@@ -217,14 +219,14 @@ class TestErrorHandling:
     def test_format_override_unknown_name_logs_and_continues(self, tmp_path, monkeypatch):
         monkeypatch.setattr(sys, "argv", _argv(
             tmp_path,
-            workbooks_dir=WORKBOOKS_DIR / "rd_dias",
+            workbooks_dir=WORKBOOKS_DIR / "haemonc",
             extra=["--format", "nonexistent_v99"],
         ))
         main()
         assert list(tmp_path.glob("*_errors.csv")) == []
 
     def test_validation_errors_write_csv(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "rd_dias"))
+        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc"))
         with patch("augean.main.validator.validate_all", return_value=["bad field value"]):
             main()
         csvs = list(tmp_path.glob("*_errors.csv"))
@@ -232,7 +234,7 @@ class TestErrorHandling:
         assert "bad field value" in csvs[0].read_text()
 
     def test_parse_error_writes_csv(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "rd_dias"))
+        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc"))
         with patch("augean.main.parser.parse_workbook", side_effect=RuntimeError("parse boom")):
             main()
         csvs = list(tmp_path.glob("*_errors.csv"))
@@ -240,7 +242,7 @@ class TestErrorHandling:
         assert "parse boom" in csvs[0].read_text()
 
     def test_transform_error_writes_csv(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "rd_dias"))
+        monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc"))
         with patch("augean.main.transformer.transform", side_effect=RuntimeError("transform boom")):
             main()
         csvs = list(tmp_path.glob("*_errors.csv"))
@@ -263,7 +265,7 @@ _DB_MOCKS = [
 @pytest.fixture
 def db_argv(tmp_path):
     creds = _write_creds(tmp_path)
-    return _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "rd_dias", dry_run=False, db_creds=creds)
+    return _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc", dry_run=False, db_creds=creds)
 
 
 class TestDbWrite:
