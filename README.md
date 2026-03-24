@@ -100,7 +100,7 @@ Two tables in the target PostgreSQL database are written:
 
 | Table | Content |
 |---|---|
-| `testdirectory.staging_workbooks` | One row per workbook: filename, processing date, detected format, and parse status (`TRUE` = success, `FALSE` = failed with error message). |
+| `<schema>.<workbooks_table>` (default `testdirectory.staging_workbooks`) | One row per workbook: filename, processing date, detected format, and parse status (`TRUE` = success, `FALSE` = failed with error message). |
 | `<schema>.<table>` (default `testdirectory.inca`) | One row per variant per sample, containing all extracted, validated, and normalised fields (chromosome, position, alleles, gene symbol, HGVSc, classification, ACGS criteria, clinical indication, sample metadata, etc.). |
 
 ### Error CSVs (written on failure)
@@ -198,10 +198,14 @@ The test suite can be parallelised by file group for faster feedback:
 
 ```bash
 pytest tests/test_config.py tests/test_db.py tests/test_loader.py \
-       tests/test_transformer.py tests/test_validator.py &
-pytest tests/test_parser.py &
-pytest tests/test_main.py &
-wait
+       tests/test_transformer.py tests/test_validator.py & p1=$!
+pytest tests/test_parser.py & p2=$!
+pytest tests/test_main.py & p3=$!
+status=0
+wait "$p1" || status=$?
+wait "$p2" || status=$?
+wait "$p3" || status=$?
+test "$status" -eq 0
 ```
 
 Wall clock time: ~34s (vs ~215s sequential).
