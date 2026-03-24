@@ -8,7 +8,11 @@ build/
 .coverage
 htmlcov/
 .pytest_cache/
-tests/test_data/workbooks/
+# Patient data workbooks — do not commit real workbooks
+tests/test_data/workbooks/rd_dias/*.xlsx
+tests/test_data/workbooks/haemonc/*.xlsx
+!tests/test_data/workbooks/rd_dias/148888811-45664R057-66NGWTY2-9116-M-111118.xlsx
+!tests/test_data/workbooks/haemonc/999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx
 db_credentials*.json
 !db_credentials.template.json
 deployment*.json
