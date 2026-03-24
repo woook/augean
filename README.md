@@ -62,7 +62,7 @@ CLI flags always override values in the deployment config.
 | `--output_dir DIR` | Directory for error CSVs. Overrides deployment config. |
 | `--organisation {CUH,NUH}` | Organisation label. Overrides deployment config. |
 | `--dry_run` | Parse and validate only; no database writes. |
-| `--migrate` | Add missing columns to the target table before inserting (see [Schema migration](#schema-migration)). |
+| `--migrate` | Add missing columns to the target table before inserting (see [Schema mismatch errors](#schema-mismatch-errors)). |
 | `--format FORMAT_NAME` | Skip auto-detection and force a specific format (e.g. `rd_dias_v1`). |
 | `--db_table TABLE` | Target variant table name. Overrides deployment config. |
 | `--db_schema SCHEMA` | Target schema. Overrides deployment config. |
@@ -117,7 +117,7 @@ Columns: `workbook`, `error`. One row per error message.
 
 Before inserting, Augean compares the DataFrame columns against the columns present in the target PostgreSQL table. If any columns are missing, the workbook is marked as failed and a schema mismatch error is written to the error CSV:
 
-```
+```text
 Schema mismatch: The following columns are not present in testdirectory.inca
 and must be added before inserting: ['new_column']
 
