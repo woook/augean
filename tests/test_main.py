@@ -10,6 +10,7 @@ from unittest.mock import patch
 import pytest
 
 import augean.parser as _parser
+from augean.errors import TransformError
 from augean.main import _apply_deployment_config, _write_error_csv, main, parse_args
 
 
@@ -243,7 +244,7 @@ class TestErrorHandling:
 
     def test_transform_error_writes_csv(self, tmp_path, monkeypatch):
         monkeypatch.setattr(sys, "argv", _argv(tmp_path, workbooks_dir=WORKBOOKS_DIR / "haemonc"))
-        with patch("augean.main.transformer.transform", side_effect=RuntimeError("transform boom")):
+        with patch("augean.main.transformer.transform", side_effect=TransformError("transform boom")):
             main()
         csvs = list(tmp_path.glob("*_errors.csv"))
         assert len(csvs) > 0

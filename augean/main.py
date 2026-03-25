@@ -9,7 +9,7 @@ import pandas as pd
 
 from augean import config as config_module
 from augean import db, loader, parser, transformer, validator
-from augean.errors import AmbiguousWorkbookFormatError, SchemaMismatchError, WorkbookFormatUnknownError
+from augean.errors import AmbiguousWorkbookFormatError, SchemaMismatchError, TransformError, WorkbookFormatUnknownError
 
 log = logging.getLogger(__name__)
 
@@ -186,7 +186,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
     # Transform
     try:
         final_df = transformer.transform(raw_df, cfg)
-    except Exception as exc:
+    except TransformError as exc:
         log.error("Transform failed for '%s': %s", wb_name, exc)
         errors = [f"Transform error: {exc}"]
         if engine is not None:

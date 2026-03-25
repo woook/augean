@@ -25,3 +25,7 @@ class ConfigValidationError(Exception):
 
 class SchemaMismatchError(Exception):
     pass
+
+
+class TransformError(Exception):
+    pass

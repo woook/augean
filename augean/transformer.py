@@ -1,6 +1,8 @@
 """Normalisation and derived-field transformations."""
 import logging
 
+from augean.errors import TransformError
+
 import numpy as np
 import pandas as pd
 
@@ -85,13 +87,16 @@ def apply_derived_fields(df: pd.DataFrame, derived_fields: list[dict]) -> pd.Dat
 
 def transform(df: pd.DataFrame, config: dict) -> pd.DataFrame:
     """Orchestrate: null sentinels → normalisations → ACGS null → derived fields."""
-    df = apply_null_sentinels(df, config.get("null_sentinels", []))
-    df = apply_normalisations(df, config.get("normalisations", []))
+    try:
+        df = apply_null_sentinels(df, config.get("null_sentinels", []))
+        df = apply_normalisations(df, config.get("normalisations", []))
 
-    acgs_config = config.get("validations", {}).get("acgs", {})
-    if acgs_config:
-        df = make_acgs_criteria_null(df, acgs_config.get("criteria", []))
+        acgs_config = config.get("validations", {}).get("acgs", {})
+        if acgs_config:
+            df = make_acgs_criteria_null(df, acgs_config.get("criteria", []))
 
-    df = apply_derived_fields(df, config.get("derived_fields", []))
+        df = apply_derived_fields(df, config.get("derived_fields", []))
 
-    return df
+        return df
+    except Exception as exc:
+        raise TransformError(exc) from exc
