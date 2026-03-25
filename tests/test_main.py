@@ -89,7 +89,7 @@ def _argv(tmp_path, *, workbooks_dir=None, samples_file=None, dry_run=True,
 
 def _write_creds(tmp_path):
     p = tmp_path / "creds.json"
-    p.write_text('{"host":"localhost","port":5432,"database":"db","username":"u","password":"p"}')
+    p.write_text('{"host":"localhost","port":5432,"database":"db","user":"u","password":"p"}')
     return p
 
 

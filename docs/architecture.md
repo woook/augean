@@ -134,8 +134,8 @@ There are four validation stages, all accumulated into a single error list:
 
 Two tables are written per run:
 
-- **`testdirectory.inca_workbooks`** — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message).
-- **`testdirectory.inca`** — one row per variant, containing all extracted fields.
+- **`<schema>.<workbooks_table>`** (default `testdirectory.staging_workbooks`) — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message).
+- **`<schema>.<table>`** (default `testdirectory.inca`) — one row per variant, containing all extracted fields.
 
 Before inserting, `db.add_variants()` compares the DataFrame columns against the live table columns. If any DataFrame column is absent from the table, a `SchemaMismatchError` is raised with the `ALTER TABLE` SQL needed to resolve it. The `--migrate` flag applies these automatically.
 

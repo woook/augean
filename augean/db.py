@@ -102,6 +102,7 @@ def migrate_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) ->
     """Add any DataFrame columns absent from the target table via ALTER TABLE.
 
     Skipped when the table does not yet exist. Logs each column added.
+    Duplicate-column errors (race with a concurrent process) are treated as no-ops.
     """
     missing = _missing_columns(engine, df, table, schema)
     if not missing:
@@ -113,7 +114,13 @@ def migrate_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) ->
             log.warning(
                 "Adding column to %s.%s: %s %s", schema, table, col, pg_type
             )
-            conn.execute(text(f"ALTER TABLE {schema}.{table} ADD COLUMN {col} {pg_type}"))
+            try:
+                conn.execute(text(f"ALTER TABLE {schema}.{table} ADD COLUMN {col} {pg_type}"))
+            except Exception as exc:
+                if getattr(getattr(exc, "orig", None), "pgcode", None) == "42701":
+                    log.debug("Column %s already exists in %s.%s (concurrent add), skipping", col, schema, table)
+                else:
+                    raise
 
 
 def _check_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> None:

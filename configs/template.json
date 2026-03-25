@@ -58,7 +58,7 @@
         { "source": "SYMBOL",      "db_column": "gene_symbol" },
         { "source": "HGVSc",       "db_column": "hgvsc" },
         { "source": "Consequence", "db_column": "consequence" },
-        { "source": "Interpreted", "db_column": "interpreted", "transform": "lowercase" },
+        { "_comment": "Can use lowercase for string dropdowns, OR boolean_to_yes_no for Excel checkbox columns" },
         { "source": "Interpreted", "db_column": "interpreted", "transform": "boolean_to_yes_no" },
         { "source": "Comment",     "db_column": "classification_comment" }
       ],
