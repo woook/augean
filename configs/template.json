@@ -26,8 +26,7 @@
           "extraction": "sentinel_scan",
           "scan_column": "A",
           "sentinel_value": "Reference:",
-          "value_column": "B",
-          "default": "not_defined"
+          "value_column": "B"
         }
       ]
     },
@@ -41,7 +40,7 @@
         { "db_column": "sample_id",              "label": "Sample ID" },
         { "db_column": "date_last_evaluated",    "label": "Date",            "type": "date" },
         { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
-        { "db_column": "ref_genome",             "label": "Reference:",      "default": "not_defined" }
+        { "db_column": "ref_genome",             "label": "Reference:" }
       ]
     },
 

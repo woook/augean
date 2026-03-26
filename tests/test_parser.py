@@ -107,14 +107,13 @@ class TestExtractNamedCells:
                     "scan_column": "A",
                     "sentinel_value": "Reference:",
                     "value_column": "B",
-                    "default": "not_defined",
                 }
             ]
         }
         df = extract_named_cells(wb, "summary", config)
         assert df["ref_genome"][0] == "GRCh38"
 
-    def test_sentinel_scan_uses_default_when_not_found(self):
+    def test_sentinel_scan_returns_none_when_not_found(self):
         wb = MagicMock()
         sheet = self._make_sheet_with_cells({
             "__col_A__": [None, None],
@@ -129,12 +128,11 @@ class TestExtractNamedCells:
                     "scan_column": "A",
                     "sentinel_value": "Reference:",
                     "value_column": "B",
-                    "default": "not_defined",
                 }
             ]
         }
         df = extract_named_cells(wb, "summary", config)
-        assert df["ref_genome"][0] == "not_defined"
+        assert df["ref_genome"][0] is None
 
     def test_clinical_indication_split(self):
         wb = MagicMock()

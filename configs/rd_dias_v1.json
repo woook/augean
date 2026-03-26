@@ -19,8 +19,8 @@
         { "db_column": "date_last_evaluated", "cell": "G22", "type": "date" },
         { "db_column": "ref_genome",
           "extraction": "sentinel_scan",
-          "scan_column": "A", "sentinel_value": "Reference:", "value_column": "B",
-          "default": "not_defined" }
+          "scan_column": "A", "sentinel_value": "Reference:", "value_column": "B"
+          }
       ]
     },
 
