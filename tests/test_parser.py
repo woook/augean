@@ -1,5 +1,4 @@
 """Tests for parser.py."""
-import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -341,9 +340,7 @@ class TestExtractNamedCellsMulti:
 class TestExtractTabular:
     def test_extracts_rd_dias_included(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
         sheet_config = rd_dias_config["sheets"]["included"]
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
 
         assert "hgvsc" in df.columns
         assert "chromosome" in df.columns
@@ -353,25 +350,19 @@ class TestExtractTabular:
 
     def test_interpreted_lowercased(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
         sheet_config = rd_dias_config["sheets"]["included"]
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
 
         assert df["interpreted"].isin(["yes", "no"]).all()
 
     def test_local_id_unique(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
         sheet_config = rd_dias_config["sheets"]["included"]
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
 
         assert df["local_id"].nunique() == len(df)
 
     def test_linking_id_equals_local_id(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
         sheet_config = rd_dias_config["sheets"]["included"]
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
 
         assert (df["local_id"] == df["linking_id"]).all()
 
@@ -418,9 +409,7 @@ class TestMergeDataframes:
 
 class TestParseWorkbook:
     def test_rd_dias_parse_returns_dataframe(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
+        df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) >= 1
@@ -430,27 +419,21 @@ class TestParseWorkbook:
         assert "institution" in df.columns
 
     def test_rd_dias_constant_fields(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
+        df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
 
         assert df["allele_origin"].unique()[0] == "germline"
         assert df["collection_method"].unique()[0] == "clinical testing"
         assert df["affected_status"].unique()[0] == "yes"
 
     def test_rd_dias_summary_fields(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
+        df = parse_workbook(rd_dias_cuh_workbook, rd_dias_config, rd_dias_cuh_path)
 
         assert df["ref_genome"][0] is not None
         assert "preferred_condition_name" in df.columns
         assert "r_code" in df.columns
 
     def test_haemonc_parse_returns_dataframe(self, haemonc_workbook, haemonc_path, haemonc_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+        df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
 
         assert isinstance(df, pd.DataFrame)
         assert len(df) > 0
@@ -459,25 +442,19 @@ class TestParseWorkbook:
         assert "allele_origin" in df.columns
 
     def test_haemonc_allele_origin_somatic(self, haemonc_workbook, haemonc_path, haemonc_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+        df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
 
         assert df["allele_origin"].unique()[0] == "somatic"
 
     def test_haemonc_variant_category_column_present(self, haemonc_workbook, haemonc_path, haemonc_config):
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+        df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
 
         assert "variant_category" in df.columns
         assert df["variant_category"].notna().all()
 
     def test_haemonc_allele_origin_still_somatic_after_pindel(self, haemonc_workbook, haemonc_path, haemonc_config):
         """Regression: top-level constant_fields broadcast to all rows including pindel."""
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+        df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
 
         assert (df["allele_origin"] == "somatic").all()
 
@@ -513,18 +490,14 @@ class TestExtractTabularConstantFields:
         """Baseline: config without constant_fields produces no variant_category column."""
         sheet_config = rd_dias_config["sheets"]["included"]
         assert "constant_fields" not in sheet_config
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
         assert "variant_category" not in df.columns
 
     def test_constant_fields_stamped_on_all_rows(self, rd_dias_cuh_workbook, rd_dias_cuh_path, rd_dias_config):
         """Sheet-level constant_fields adds the column with the given value on every row."""
         sheet_config = {**rd_dias_config["sheets"]["included"],
                         "constant_fields": {"variant_category": "included"}}
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
         assert "variant_category" in df.columns
         assert (df["variant_category"] == "included").all()
 
@@ -532,9 +505,7 @@ class TestExtractTabularConstantFields:
         """Multiple keys in constant_fields all appear as columns."""
         sheet_config = {**rd_dias_config["sheets"]["included"],
                         "constant_fields": {"variant_category": "included", "source_caller": "gatk"}}
-        with patch.object(parser, "time") as mock_time:
-            mock_time.sleep = MagicMock()
-            df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
+        df = extract_tabular(rd_dias_cuh_workbook, "included", sheet_config, rd_dias_cuh_path)
         assert (df["variant_category"] == "included").all()
         assert (df["source_caller"] == "gatk").all()
 
@@ -613,9 +584,7 @@ def test_haemonc_smoke_inputs_present():
 def test_haemonc_workbook_smoke(xlsx_path, haemonc_config):
     import openpyxl
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    with patch.object(parser, "time") as mock_time:
-        mock_time.sleep = MagicMock()
-        df = parse_workbook(wb, haemonc_config, xlsx_path)
+    df = parse_workbook(wb, haemonc_config, xlsx_path)
     assert not df.empty
     assert "specimen_id" in df.columns
     assert "hgvsc" in df.columns

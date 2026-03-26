@@ -9,14 +9,9 @@ from unittest.mock import patch
 
 import pytest
 
-import augean.parser as _parser
 from augean.main import _apply_deployment_config, _write_error_csv, main, parse_args
 
 
-@pytest.fixture(autouse=True)
-def mock_parser_sleep(monkeypatch):
-    """Skip UUID time.sleep delays in all test_main tests."""
-    monkeypatch.setattr(_parser.time, "sleep", lambda _: None)
 
 CONFIGS_DIR = Path(__file__).parent.parent / "configs"
 WORKBOOKS_DIR = Path(__file__).parent / "test_data" / "workbooks"

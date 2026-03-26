@@ -1,7 +1,6 @@
 """Extract sheets from Excel workbooks into DataFrames per config."""
 import logging
 import re
-import time
 import uuid
 from datetime import date
 from pathlib import Path
@@ -135,12 +134,7 @@ def extract_tabular(
     for gen_col in sheet_config.get("generated_columns", []):
         db_col = gen_col["db_column"]
         if gen_col.get("generation") == "uuid_time":
-            ids = []
-            for _ in range(len(df)):
-                unique_id = uuid.uuid1()
-                ids.append(f"uid_{unique_id.time}")
-                time.sleep(0.5)
-            df[db_col] = ids
+            df[db_col] = [f"uid_{uuid.uuid1().hex}" for _ in range(len(df))]
         elif "source" in gen_col:
             source = gen_col["source"]
             if source in df.columns:
@@ -194,7 +188,10 @@ def merge_dataframes(
         join_cfg = merge_config.get("included_join_interpret", {})
         on_col = join_cfg.get("on", "hgvsc")
         how = join_cfg.get("how", "left")
-        df_merged = pd.merge(df_merged, interpret_df, on=on_col, how=how)
+        if on_col in df_merged.columns and on_col in interpret_df.columns:
+            df_merged = pd.merge(df_merged, interpret_df, on=on_col, how=how)
+        else:
+            log.debug("Skipping interpret merge: missing join column '%s'", on_col)
 
     return df_merged
 
@@ -268,6 +265,11 @@ def _split_sample_id(raw_value) -> dict:
     if raw_value is None:
         return {}
     parts = str(raw_value).split("-", 5)
+    if len(parts) != 6:
+        raise ValueError(
+            f"sample_id '{raw_value}' must contain 6 hyphen-delimited segments: "
+            "[InstrumentID]-[SpecimenID]-[BatchID]-[Testcode]-[Sex]-[ProbesetID]"
+        )
     keys = ["instrument_id", "specimen_id", "batch_id", "test_code", None, "probeset_id"]
     return {k: v for k, v in zip(keys, parts) if k is not None}
 
