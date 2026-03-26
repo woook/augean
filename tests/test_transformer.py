@@ -99,7 +99,7 @@ class TestBuildAcgsComment:
         "PS":  "Strong",
         "PM":  "Moderate",
         "PP":  "Supporting",
-        "BS":  "Supporting",
+        "BS":  "Strong",
         "BA":  "Stand-Alone",
         "BP":  "Supporting",
     }
