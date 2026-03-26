@@ -130,7 +130,7 @@ def extract_tabular(
         if transform == "lowercase":
             df[db_col] = df[db_col].str.lower()
         elif transform == "boolean_to_yes_no":
-            df[db_col] = df[db_col].map({True: "yes", False: "no", 1: "yes", 0: "no"})
+            df[db_col] = df[db_col].map({True: "yes", False: "no"})
 
     for gen_col in sheet_config.get("generated_columns", []):
         db_col = gen_col["db_column"]

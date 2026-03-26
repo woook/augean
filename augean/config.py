@@ -69,7 +69,10 @@ def _evaluate_single_check(workbook, check: dict) -> bool:
     sheet = workbook[sheet_name]
 
     if "has_columns" in check:
-        headers = [cell.value for cell in next(sheet.iter_rows(min_row=1, max_row=1))]
+        first_row = next(sheet.iter_rows(min_row=1, max_row=1), None)
+        if first_row is None:
+            return False
+        headers = [cell.value for cell in first_row]
         return all(col in headers for col in check["has_columns"])
 
     if "cell" in check:

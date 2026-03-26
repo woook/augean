@@ -130,7 +130,9 @@
       "criteria": ["pvs1","ps1","ps2","ps3","ps4",
                    "pm1","pm2","pm3","pm4","pm5","pm6",
                    "pp1","pp2","pp3","pp4",
-                   "bs2","bs3","bs1","bp2","bp3","bs4","bp1","bp4","bp5","bp7"],
+                   "ba1",
+                   "bs1","bs2","bs3","bs4",
+                   "bp1","bp2","bp3","bp4","bp5","bp7"],
       "matched_strength": {
         "PVS": "Very Strong",
         "PS":  "Strong",

@@ -27,10 +27,10 @@ class TestValidateStructural:
         def get_sheet(name):
             s = MagicMock()
             sheet_cells = cells.get(name, {})
-            s.__getitem__ = lambda self, k: MagicMock(value=sheet_cells.get(k))
+            s.__getitem__.side_effect = lambda k: MagicMock(value=sheet_cells.get(k))
             return s
 
-        wb.__getitem__ = lambda s, k: get_sheet(k)
+        wb.__getitem__.side_effect = lambda k: get_sheet(k)
         return wb
 
     def test_no_errors_when_cells_match(self):
@@ -305,10 +305,10 @@ class TestValidateAll:
 
         def get_sheet(name):
             s = MagicMock()
-            s.__getitem__ = lambda self, k: MagicMock(value="Wrong")
+            s.__getitem__.side_effect = lambda k: MagicMock(value="Wrong")
             return s
 
-        wb.__getitem__ = lambda s, k: get_sheet(k)
+        wb.__getitem__.side_effect = lambda k: get_sheet(k)
 
         df = pd.DataFrame({
             "interpreted": ["bad_value"],
