@@ -4,18 +4,22 @@ import logging
 
 import pandas as pd
 from sqlalchemy import create_engine as _sa_create_engine, inspect as _sa_inspect, text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Engine, URL
 
-from augean.errors import ParseError, SchemaMismatchError
+from augean.errors import SchemaMismatchError
 
 log = logging.getLogger(__name__)
 
 
 def create_engine(db_creds: dict) -> Engine:
     """Build SQLAlchemy engine from credentials dict."""
-    url = (
-        f"postgresql+psycopg2://{db_creds['user']}:{db_creds['password']}"
-        f"@{db_creds['host']}:{db_creds.get('port', 5432)}/{db_creds['database']}"
+    url = URL.create(
+        "postgresql+psycopg2",
+        username=db_creds["user"],
+        password=db_creds["password"],
+        host=db_creds["host"],
+        port=db_creds.get("port", 5432),
+        database=db_creds["database"],
     )
     return _sa_create_engine(url)
 
@@ -55,7 +59,7 @@ def mark_workbook_parsed(
 
 
 def mark_workbook_failed(
-    engine: Engine, workbook_name: str, errors: list[ParseError],
+    engine: Engine, workbook_name: str, errors: list[str],
     schema: str = "testdirectory", workbooks_table: str = "staging_workbooks",
 ) -> None:
     """UPDATE workbooks tracking table SET parse_status=FALSE, comment=<errors>."""

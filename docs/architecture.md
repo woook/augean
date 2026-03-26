@@ -16,7 +16,7 @@ The key design goal is that **adding a new workbook format requires only a JSON 
 
 Every workbook passes through six stages in sequence:
 
-```
+```text
 Excel file
     │
     ▼
