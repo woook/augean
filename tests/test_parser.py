@@ -540,14 +540,14 @@ class TestParseWorkbookPindel:
 # ---------------------------------------------------------------------------
 
 def test_haemonc_smoke_pindel_sheet_present():
-    """Precondition: the HaemOnc test workbook has a pindel sheet."""
+    """Precondition: the canonical anonymised HaemOnc fixture has a pindel sheet."""
     import openpyxl
-    xlsx_files = sorted((WORKBOOKS_DIR / "haemonc").glob("*.xlsx"))
-    if not xlsx_files:
-        pytest.skip("No HaemOnc test workbook available")
-    wb = openpyxl.load_workbook(xlsx_files[0], read_only=True, data_only=True)
+    fixture = WORKBOOKS_DIR / "haemonc" / "999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx"
+    if not fixture.exists():
+        pytest.skip("Anonymised HaemOnc fixture not present")
+    wb = openpyxl.load_workbook(fixture, read_only=True, data_only=True)
     try:
-        assert "pindel" in wb.sheetnames, "Test workbook must have a pindel sheet for pindel extraction tests"
+        assert "pindel" in wb.sheetnames, "Anonymised HaemOnc fixture must have a pindel sheet"
     finally:
         wb.close()
 

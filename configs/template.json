@@ -31,19 +31,6 @@
       ]
     },
 
-    "_comment_label_scan": "Use label_scan when fields are label/value pairs with no fixed row positions.",
-    "summary_label_scan_example": {
-      "extraction_type": "label_scan",
-      "scan_column": "A",
-      "value_column": "B",
-      "fields": [
-        { "db_column": "sample_id",              "label": "Sample ID" },
-        { "db_column": "date_last_evaluated",    "label": "Date",            "type": "date" },
-        { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
-        { "db_column": "ref_genome",             "label": "Reference:" }
-      ]
-    },
-
     "_comment_tabular": "Use tabular for variant tables read with pd.read_excel.",
     "included": {
       "extraction_type": "tabular",
@@ -139,6 +126,22 @@
       "criteria": ["pvs1", "ps1", "ps2", "pm1", "pm2", "pp1", "ba1", "bs1", "bp1"],
       "strength_dropdown": ["Very Strong", "Strong", "Moderate", "Supporting", "NA"],
       "ba1_dropdown":      ["Stand-Alone", "Very Strong", "Strong", "Moderate", "Supporting", "NA"]
+    }
+  },
+
+  "_comment_examples": "Sheet extractor examples — kept outside 'sheets' so parse_workbook does not process them.",
+  "_examples": {
+    "summary_label_scan": {
+      "_comment": "Use this pattern when your summary fields are label/value pairs with no fixed row positions (e.g. HaemOnc Uranus). Replace the named_cells 'summary' block above with this.",
+      "extraction_type": "label_scan",
+      "scan_column": "A",
+      "value_column": "B",
+      "fields": [
+        { "db_column": "sample_id",               "label": "Sample ID" },
+        { "db_column": "date_last_evaluated",     "label": "Date",             "type": "date" },
+        { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
+        { "db_column": "ref_genome",              "label": "Reference:" }
+      ]
     }
   }
 }

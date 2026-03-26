@@ -122,7 +122,7 @@ class TestMigrateSchema:
             mock_inspect.return_value.get_columns.return_value = [{"name": "hgvsc"}]
             migrate_schema(engine, df, "inca", "testdirectory")
         sql_called = conn.execute.call_args[0][0].text
-        assert "ADD COLUMN new_col" in sql_called
+        assert "ADD COLUMN IF NOT EXISTS new_col" in sql_called
 
     def test_no_alter_when_schema_matches(self):
         engine, conn = _make_engine()

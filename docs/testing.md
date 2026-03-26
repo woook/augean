@@ -113,7 +113,7 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ## `test_main.py` — 22 tests
 
-An autouse fixture `mock_parser_sleep` patches `augean.parser.time.sleep` to a no-op in all tests, eliminating UUID generation delays (~0.5s per variant row).
+UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py` tests run at full speed with no fixture patching needed.
 
 ### Dry run
 

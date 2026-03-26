@@ -52,7 +52,7 @@ def mark_workbook_parsed(
     qualified = f"{schema}.{workbooks_table}"
     with engine.begin() as conn:
         conn.execute(
-            text(f"UPDATE {qualified} SET parse_status = TRUE WHERE workbook_name = :wb"),
+            text(f"UPDATE {qualified} SET parse_status = TRUE, comment = NULL WHERE workbook_name = :wb"),
             {"wb": workbook_name},
         )
     log.debug("Marked '%s' as parsed", workbook_name)
@@ -118,13 +118,7 @@ def migrate_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) ->
             log.warning(
                 "Adding column to %s.%s: %s %s", schema, table, col, pg_type
             )
-            try:
-                conn.execute(text(f"ALTER TABLE {schema}.{table} ADD COLUMN {col} {pg_type}"))
-            except Exception as exc:
-                if getattr(getattr(exc, "orig", None), "pgcode", None) == "42701":
-                    log.debug("Column %s already exists in %s.%s (concurrent add), skipping", col, schema, table)
-                else:
-                    raise
+            conn.execute(text(f"ALTER TABLE {schema}.{table} ADD COLUMN IF NOT EXISTS {col} {pg_type}"))
 
 
 def _check_schema(engine: Engine, df: pd.DataFrame, table: str, schema: str) -> None:
