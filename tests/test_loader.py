@@ -38,10 +38,10 @@ class TestDetectFormat:
 
         def sheet(name):
             s = MagicMock()
-            s.__getitem__ = lambda self, k: MagicMock(value=None)
+            s.__getitem__.side_effect = lambda k: MagicMock(value=None)
             s.iter_rows = MagicMock(return_value=iter([[]]))
             return s
 
-        wb.__getitem__ = lambda self, k: sheet(k)
+        wb.__getitem__.side_effect = lambda k: sheet(k)
         with pytest.raises(WorkbookFormatUnknownError):
             detect_format(wb, all_configs)

@@ -21,7 +21,7 @@ def validate_structural(workbook, config: dict, workbook_name: str = "") -> list
         error_msg = check.get("error", "Structural validation failed")
 
         if "*" in sheet_ref:
-            pattern = sheet_ref.replace("*", ".*")
+            pattern = sheet_ref.replace("*", ".*") + "$"
             matching = [s for s in workbook.sheetnames if re.match(pattern, s, re.IGNORECASE)]
             for sheet_name in matching:
                 actual = workbook[sheet_name][cell].value

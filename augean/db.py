@@ -30,7 +30,7 @@ def add_workbook(
 ) -> None:
     """INSERT into workbooks tracking table; ON CONFLICT DO NOTHING."""
     qualified = f"{schema}.{workbooks_table}"
-    now = datetime.datetime.now()
+    now = datetime.datetime.now(datetime.timezone.utc)
     with engine.begin() as conn:
         result = conn.execute(
             text(

@@ -119,14 +119,20 @@ def extract_tabular(
         elif transform == "boolean_to_yes_no":
             df[db_col] = df[db_col].map({True: "yes", False: "no"})
 
+    pending_copies: list[tuple[str, str]] = []
     for gen_col in sheet_config.get("generated_columns", []):
         db_col = gen_col["db_column"]
         if gen_col.get("generation") == "uuid_time":
             df[db_col] = [f"uid_{uuid.uuid1().hex}" for _ in range(len(df))]
         elif "source" in gen_col:
-            source = gen_col["source"]
-            if source in df.columns:
-                df[db_col] = df[source]
+            pending_copies.append((db_col, gen_col["source"]))
+
+    for db_col, source in pending_copies:
+        if source not in df.columns:
+            raise KeyError(
+                f"generated column '{db_col}' references missing source '{source}'"
+            )
+        df[db_col] = df[source]
 
     for key, val in sheet_config.get("constant_fields", {}).items():
         df[key] = val
@@ -215,6 +221,11 @@ def parse_workbook(workbook, config: dict, filename: Path) -> pd.DataFrame:
         elif extraction_type == "named_cells_multi":
             interpret_df = extract_named_cells_multi(workbook, sheet_config)
             log.debug("Extracted named_cells_multi: %d rows", len(interpret_df))
+
+        else:
+            raise ValueError(
+                f"Unsupported extraction_type '{extraction_type}' for sheet '{sheet_key}'"
+            )
 
     # Add constant fields to summary
     constant_fields = config.get("constant_fields", {})

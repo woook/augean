@@ -77,7 +77,7 @@ class TestMarkWorkbookFailed:
 
 class TestAddVariants:
     def test_returns_row_count(self):
-        engine, conn = _make_engine()
+        engine, _conn = _make_engine()
         df = pd.DataFrame({"hgvsc": ["NM_1:c.1A>T"], "chromosome": [1]})
         with patch.object(db_module, "_check_schema"), \
              patch("augean.db.pd.DataFrame.to_sql", return_value=1):

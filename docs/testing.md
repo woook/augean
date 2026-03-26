@@ -160,7 +160,7 @@ An autouse fixture `mock_parser_sleep` patches `augean.parser.time.sleep` to a n
 
 Anonymised workbooks (no patient data) are committed to the repo and used by CI:
 
-```
+```text
 tests/test_data/workbooks/
   rd_dias/
     148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)

@@ -546,7 +546,10 @@ def test_haemonc_smoke_pindel_sheet_present():
     if not xlsx_files:
         pytest.skip("No HaemOnc test workbook available")
     wb = openpyxl.load_workbook(xlsx_files[0], read_only=True, data_only=True)
-    assert "pindel" in wb.sheetnames, "Test workbook must have a pindel sheet for pindel extraction tests"
+    try:
+        assert "pindel" in wb.sheetnames, "Test workbook must have a pindel sheet for pindel extraction tests"
+    finally:
+        wb.close()
 
 
 # ---------------------------------------------------------------------------
@@ -565,7 +568,10 @@ def test_haemonc_smoke_inputs_present():
 def test_haemonc_workbook_smoke(xlsx_path, haemonc_config):
     import openpyxl
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    df = parse_workbook(wb, haemonc_config, xlsx_path)
+    try:
+        df = parse_workbook(wb, haemonc_config, xlsx_path)
+    finally:
+        wb.close()
     assert not df.empty
     assert "specimen_id" in df.columns
     assert "hgvsc" in df.columns
