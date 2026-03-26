@@ -1,0 +1,145 @@
+{
+  "format_name": "your_format_name_v1",
+  "format_version": "1.0",
+
+  "_comment_fingerprint": "Rules used to auto-detect this format. All rules must match.",
+  "fingerprint": [
+    { "sheet": "summary", "cell": "A1", "equals": "Expected value" },
+    { "sheet": "summary", "cell": "B1", "matches_pattern": "^\\d{9}-" },
+    { "sheet_pattern": "^interpret", "exists": true },
+    { "sheet": "included", "has_columns": ["HGVSc", "CHROM"] }
+  ],
+
+  "sheets": {
+
+    "_comment_named_cells": "Use named_cells when fields are at fixed cell addresses.",
+    "summary": {
+      "extraction_type": "named_cells",
+      "fields": [
+        { "db_column": "sample_id",           "cell": "B1" },
+        { "db_column": "panel",               "cell": "F2" },
+        { "db_column": "date_last_evaluated", "cell": "G22", "type": "date", "default": "today" },
+        { "db_column": "clinical_indication",  "cell": "F1", "parse": "clinical_indication_split" },
+        {
+          "_comment": "sentinel_scan: scan a column for a label, read the adjacent cell",
+          "db_column": "ref_genome",
+          "extraction": "sentinel_scan",
+          "scan_column": "A",
+          "sentinel_value": "Reference:",
+          "value_column": "B",
+          "default": "not_defined"
+        }
+      ]
+    },
+
+    "_comment_label_scan": "Use label_scan when fields are label/value pairs with no fixed row positions.",
+    "summary_label_scan_example": {
+      "extraction_type": "label_scan",
+      "scan_column": "A",
+      "value_column": "B",
+      "fields": [
+        { "db_column": "sample_id",              "label": "Sample ID" },
+        { "db_column": "date_last_evaluated",    "label": "Date",            "type": "date", "default": "today" },
+        { "db_column": "preferred_condition_name","label": "Subpanel analysed" },
+        { "db_column": "ref_genome",             "label": "Reference:",      "default": "not_defined" }
+      ]
+    },
+
+    "_comment_tabular": "Use tabular for variant tables read with pd.read_excel.",
+    "included": {
+      "extraction_type": "tabular",
+      "_comment_row_count_ref": "Optional: read row count from a cell rather than reading the whole sheet",
+      "row_count_ref": { "sheet": "summary", "cell": "C38" },
+      "columns": [
+        { "source": "CHROM",       "db_column": "chromosome" },
+        { "source": "POS",         "db_column": "start" },
+        { "source": "REF",         "db_column": "reference_allele" },
+        { "source": "ALT",         "db_column": "alternate_allele" },
+        { "source": "SYMBOL",      "db_column": "gene_symbol" },
+        { "source": "HGVSc",       "db_column": "hgvsc" },
+        { "source": "Consequence", "db_column": "consequence" },
+        { "_comment": "Can use lowercase for string dropdowns, OR boolean_to_yes_no for Excel checkbox columns" },
+        { "source": "Interpreted", "db_column": "interpreted", "transform": "boolean_to_yes_no" },
+        { "source": "Comment",     "db_column": "classification_comment" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    },
+
+    "_comment_named_cells_multi": "Use named_cells_multi to extract one row per sheet matching a pattern.",
+    "interpret": {
+      "extraction_type": "named_cells_multi",
+      "sheet_pattern": "^interpret",
+      "fields": [
+        { "db_column": "hgvsc",                   "cell": "C3" },
+        { "db_column": "germline_classification", "cell": "C26" }
+      ]
+    }
+
+  },
+
+  "_comment_merge": "Cross join summary onto included rows, then optionally left-join interpret rows.",
+  "merge_strategy": {
+    "summary_x_included":      { "how": "cross" },
+    "included_join_interpret": { "on": "hgvsc", "how": "left" }
+  },
+
+  "_comment_constants": "Fields stamped onto every output row.",
+  "constant_fields": {
+    "collection_method": "clinical testing",
+    "allele_origin":     "germline",
+    "affected_status":   "yes"
+  },
+
+  "_comment_derived": "Fields computed from other extracted fields after merging.",
+  "derived_fields": [
+    {
+      "db_column": "comment_on_classification",
+      "type": "acgs_comment",
+      "criteria": ["pvs1", "ps1", "ps2", "pm1", "pm2", "pp1", "ba1", "bs1", "bp1"],
+      "matched_strength": {
+        "PVS": "Very Strong",
+        "PS":  "Strong",
+        "PM":  "Moderate",
+        "PP":  "Supporting",
+        "BS":  "Strong",
+        "BA":  "Stand-Alone",
+        "BP":  "Supporting"
+      }
+    }
+  ],
+
+  "_comment_normalisations": "String replacements applied after validation, before DB insert.",
+  "normalisations": [
+    { "field": "germline_classification", "replace": {
+        "Likely Pathogenic": "Likely pathogenic"
+    }}
+  ],
+
+  "_comment_validations": "All validations run on the raw (pre-normalisation) DataFrame.",
+  "validations": {
+    "structural": [
+      { "sheet": "summary",    "cell": "G21", "equals": "Date",
+        "error": "Unexpected value in summary sheet — check for added rows/columns" },
+      { "sheet": "interpret*", "cell": "B26", "equals": "FINAL ACMG CLASSIFICATION",
+        "error": "Unexpected value in interpret sheet — check for added rows/columns" }
+    ],
+    "field": [
+      { "field": "germline_classification", "type": "in_list",
+        "values": ["Pathogenic", "Likely Pathogenic", "Uncertain Significance", "Likely Benign", "Benign"] },
+      { "field": "hgvsc",       "type": "not_null" },
+      { "field": "interpreted", "type": "in_list", "values": ["yes", "no"] }
+    ],
+    "cross_sheet": [
+      { "check": "interpret_hgvsc_in_included" },
+      { "check": "interpreted_classification_consistency" }
+    ],
+    "acgs": {
+      "criteria": ["pvs1", "ps1", "ps2", "pm1", "pm2", "pp1", "ba1", "bs1", "bp1"],
+      "strength_dropdown": ["Very Strong", "Strong", "Moderate", "Supporting", "NA"],
+      "ba1_dropdown":      ["Stand-Alone", "Very Strong", "Strong", "Moderate", "Supporting", "NA"]
+    }
+  }
+}
