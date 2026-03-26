@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pandas as pd
 import pytest
-from freezegun import freeze_time
 
 from augean import parser
 from augean.parser import (
@@ -157,20 +156,18 @@ class TestExtractNamedCells:
         assert df["r_code"][0] == "R208.1;R207.1"
         assert "clinical_indication" not in df.columns
 
-    @freeze_time("2024-07-10")
-    def test_date_default_today(self):
+    def test_empty_cell_returns_none(self):
         wb = MagicMock()
         sheet = self._make_sheet_with_cells({"G22": None})
         wb.__getitem__ = lambda s, k: sheet
 
         config = {
             "fields": [
-                {"db_column": "date_last_evaluated", "cell": "G22",
-                 "type": "date", "default": "today"}
+                {"db_column": "date_last_evaluated", "cell": "G22", "type": "date"}
             ]
         }
         df = extract_named_cells(wb, "summary", config)
-        assert str(df["date_last_evaluated"][0]) == "2024-07-10"
+        assert df["date_last_evaluated"][0] is None
 
     def test_sample_id_split(self):
         wb = MagicMock()
@@ -239,31 +236,17 @@ class TestExtractLabelScan:
         assert df["panel"][0] == "M87"
         assert df["preferred_condition_name"][0] == "Myeloid"
 
-    def test_missing_label_returns_default(self):
+    def test_missing_label_returns_none(self):
         wb = self._make_wb(["Sample ID"], {"B1": "S1"})
         config = {
             "scan_column": "A",
             "value_column": "B",
             "fields": [
-                {"db_column": "ref_genome", "label": "Reference:", "default": "not_defined"},
+                {"db_column": "ref_genome", "label": "Reference:"},
             ],
         }
         df = extract_label_scan(wb, "summary", config)
-        assert df["ref_genome"][0] == "not_defined"
-
-    @freeze_time("2024-07-10")
-    def test_date_default_today(self):
-        wb = self._make_wb([], {})
-        config = {
-            "scan_column": "A",
-            "value_column": "B",
-            "fields": [
-                {"db_column": "date_last_evaluated", "label": "Date",
-                 "type": "date", "default": "today"},
-            ],
-        }
-        df = extract_label_scan(wb, "summary", config)
-        assert str(df["date_last_evaluated"][0]) == "2024-07-10"
+        assert df["ref_genome"][0] is None
 
     def test_sample_id_split(self):
         wb = self._make_wb(

@@ -2,7 +2,6 @@
 import logging
 import re
 import uuid
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -49,13 +48,6 @@ def extract_named_cells(workbook, sheet_name: str, sheet_config: dict) -> pd.Dat
             row.update(_split_sample_id(cell_val))
             continue
 
-        if cell_val is None:
-            default = field.get("default")
-            if field.get("type") == "date" and default == "today":
-                cell_val = str(date.today())
-            else:
-                cell_val = default
-
         row[db_col] = cell_val
 
     return pd.DataFrame([row])
@@ -86,10 +78,6 @@ def extract_label_scan(workbook, sheet_name: str, sheet_config: dict) -> pd.Data
             cell_val = sheet[f"{value_col}{row_num}"].value
         else:
             cell_val = None
-
-        if cell_val is None:
-            default = field.get("default")
-            cell_val = str(date.today()) if default == "today" else default
 
         if field.get("parse") == "sample_id_split":
             row.update(_split_sample_id(cell_val))
