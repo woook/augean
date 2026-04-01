@@ -178,6 +178,10 @@ def merge_dataframes(
     else:
         df_merged = included_df.copy()
 
+    # Only reached for formats that have interpret sheets (e.g. RD Dias).
+    # HaemOnc has no interpret sheets so interpret_df is always None for that format.
+    # included_join_interpret is optional in the config; defaults provide safe fallback
+    # for formats that have interpret sheets but omit the key.
     if interpret_df is not None and not interpret_df.empty:
         join_cfg = merge_config.get("included_join_interpret", {})
         on_col = join_cfg.get("on", "hgvsc")
