@@ -1,0 +1,183 @@
+{
+  "format_name": "rd_dias_v1",
+  "format_version": "1.0",
+
+  "fingerprint": [
+    { "sheet": "summary", "cell": "B1", "matches_pattern": "^\\d{9}-" },
+    { "sheet_pattern": "^interpret", "exists": true },
+    { "sheet": "included", "has_columns": ["HGVSc", "CHROM", "POS", "Interpreted"] }
+  ],
+
+  "sheets": {
+    "summary": {
+      "extraction_type": "named_cells",
+      "fields": [
+        { "db_column": "sample_id",           "cell": "B1", "parse": "sample_id_split" },
+        { "db_column": "clinical_indication",  "cell": "F1",
+          "parse": "clinical_indication_split" },
+        { "db_column": "panel",               "cell": "F2" },
+        { "db_column": "date_last_evaluated", "cell": "G22", "type": "date" },
+        { "db_column": "ref_genome",
+          "extraction": "sentinel_scan",
+          "scan_column": "A", "sentinel_value": "Reference:", "value_column": "B"
+          }
+      ]
+    },
+
+    "included": {
+      "extraction_type": "tabular",
+      "row_count_ref": { "sheet": "summary", "cell": "C38" },
+      "columns": [
+        { "source": "CHROM",       "db_column": "chromosome" },
+        { "source": "POS",         "db_column": "start" },
+        { "source": "REF",         "db_column": "reference_allele" },
+        { "source": "ALT",         "db_column": "alternate_allele" },
+        { "source": "SYMBOL",      "db_column": "gene_symbol" },
+        { "source": "HGVSc",       "db_column": "hgvsc" },
+        { "source": "Consequence", "db_column": "consequence" },
+        { "source": "Interpreted", "db_column": "interpreted",
+          "transform": "lowercase" },
+        { "source": "Comment",     "db_column": "classification_comment" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    },
+
+    "interpret": {
+      "extraction_type": "named_cells_multi",
+      "sheet_pattern": "^interpret",
+      "fields": [
+        { "db_column": "associated_disease",      "cell": "C4" },
+        { "db_column": "known_inheritance",       "cell": "C5" },
+        { "db_column": "prevalence",              "cell": "C6" },
+        { "db_column": "hgvsc",                   "cell": "C3" },
+        { "db_column": "germline_classification", "cell": "C26" },
+        { "db_column": "pvs1",                    "cell": "H10" },
+        { "db_column": "pvs1_evidence",           "cell": "C10" },
+        { "db_column": "ps1",                     "cell": "H11" },
+        { "db_column": "ps1_evidence",            "cell": "C11" },
+        { "db_column": "ps2",                     "cell": "H12" },
+        { "db_column": "ps2_evidence",            "cell": "C12" },
+        { "db_column": "ps3",                     "cell": "H13" },
+        { "db_column": "ps3_evidence",            "cell": "C13" },
+        { "db_column": "ps4",                     "cell": "H14" },
+        { "db_column": "ps4_evidence",            "cell": "C14" },
+        { "db_column": "pm1",                     "cell": "H15" },
+        { "db_column": "pm1_evidence",            "cell": "C15" },
+        { "db_column": "pm2",                     "cell": "H16" },
+        { "db_column": "pm2_evidence",            "cell": "C16" },
+        { "db_column": "pm3",                     "cell": "H17" },
+        { "db_column": "pm3_evidence",            "cell": "C17" },
+        { "db_column": "pm4",                     "cell": "H18" },
+        { "db_column": "pm4_evidence",            "cell": "C18" },
+        { "db_column": "pm5",                     "cell": "H19" },
+        { "db_column": "pm5_evidence",            "cell": "C19" },
+        { "db_column": "pm6",                     "cell": "H20" },
+        { "db_column": "pm6_evidence",            "cell": "C20" },
+        { "db_column": "pp1",                     "cell": "H21" },
+        { "db_column": "pp1_evidence",            "cell": "C21" },
+        { "db_column": "pp2",                     "cell": "H22" },
+        { "db_column": "pp2_evidence",            "cell": "C22" },
+        { "db_column": "pp3",                     "cell": "H23" },
+        { "db_column": "pp3_evidence",            "cell": "C23" },
+        { "db_column": "pp4",                     "cell": "H24" },
+        { "db_column": "pp4_evidence",            "cell": "C24" },
+        { "db_column": "bs1",                     "cell": "K16" },
+        { "db_column": "bs1_evidence",            "cell": "C16" },
+        { "db_column": "bs2",                     "cell": "K12" },
+        { "db_column": "bs2_evidence",            "cell": "C12" },
+        { "db_column": "bs3",                     "cell": "K13" },
+        { "db_column": "bs3_evidence",            "cell": "C13" },
+        { "db_column": "ba1",                     "cell": "K9" },
+        { "db_column": "ba1_evidence",            "cell": "C9" },
+        { "db_column": "bp2",                     "cell": "K17" },
+        { "db_column": "bp2_evidence",            "cell": "C17" },
+        { "db_column": "bp3",                     "cell": "K18" },
+        { "db_column": "bp3_evidence",            "cell": "C18" },
+        { "db_column": "bs4",                     "cell": "K21" },
+        { "db_column": "bs4_evidence",            "cell": "C21" },
+        { "db_column": "bp1",                     "cell": "K22" },
+        { "db_column": "bp1_evidence",            "cell": "C22" },
+        { "db_column": "bp4",                     "cell": "K23" },
+        { "db_column": "bp4_evidence",            "cell": "C23" },
+        { "db_column": "bp5",                     "cell": "K24" },
+        { "db_column": "bp5_evidence",            "cell": "C24" },
+        { "db_column": "bp7",                     "cell": "K25" },
+        { "db_column": "bp7_evidence",            "cell": "C25" }
+      ]
+    }
+  },
+
+  "merge_strategy": {
+    "summary_x_included":      { "how": "cross" },
+    "included_join_interpret": { "on": "hgvsc", "how": "left" }
+  },
+
+  "constant_fields": {
+    "institution":       "East Genomic Laboratory Hub, NHS Genomic Medicine Service",
+    "collection_method": "clinical testing",
+    "allele_origin":     "germline",
+    "affected_status":   "yes"
+  },
+
+  "derived_fields": [
+    {
+      "db_column": "comment_on_classification",
+      "type": "acgs_comment",
+      "criteria": ["pvs1","ps1","ps2","ps3","ps4",
+                   "pm1","pm2","pm3","pm4","pm5","pm6",
+                   "pp1","pp2","pp3","pp4",
+                   "ba1",
+                   "bs1","bs2","bs3","bs4",
+                   "bp1","bp2","bp3","bp4","bp5","bp7"],
+      "matched_strength": {
+        "PVS": "Very Strong",
+        "PS":  "Strong",
+        "PM":  "Moderate",
+        "PP":  "Supporting",
+        "BS":  "Strong",
+        "BA":  "Stand-Alone",
+        "BP":  "Supporting"
+      }
+    }
+  ],
+
+  "normalisations": [
+    { "field": "germline_classification", "replace": {
+        "Likely Pathogenic":      "Likely pathogenic",
+        "Uncertain Significance": "Uncertain significance",
+        "Likely Benign":          "Likely benign"
+    }}
+  ],
+
+  "validations": {
+    "structural": [
+      { "sheet": "summary",    "cell": "G21", "equals": "Date",
+        "error": "extra col(s) added or change(s) done in summary sheet" },
+      { "sheet": "interpret*", "cell": "B26", "equals": "FINAL ACMG CLASSIFICATION",
+        "error": "extra row(s) or col(s) added or change(s) done in interpret sheet" }
+    ],
+    "field": [
+      { "field": "germline_classification", "type": "in_list",
+        "values": ["Pathogenic","Likely Pathogenic","Uncertain Significance","Likely Benign","Benign"] },
+      { "field": "hgvsc",       "type": "not_null" },
+      { "field": "interpreted", "type": "in_list", "values": ["yes","no"] }
+    ],
+    "cross_sheet": [
+      { "check": "interpret_hgvsc_in_included" },
+      { "check": "interpreted_classification_consistency" }
+    ],
+    "acgs": {
+      "criteria": ["pvs1","ps1","ps2","ps3","ps4",
+                   "pm1","pm2","pm3","pm4","pm5","pm6",
+                   "pp1","pp2","pp3","pp4",
+                   "ba1",
+                   "bs1","bs2","bs3","bs4",
+                   "bp1","bp2","bp3","bp4","bp5","bp7"],
+      "strength_dropdown": ["Very Strong","Strong","Moderate","Supporting","NA"],
+      "ba1_dropdown":      ["Stand-Alone","Very Strong","Strong","Moderate","Supporting","NA"]
+    }
+  }
+}

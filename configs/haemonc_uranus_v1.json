@@ -1,0 +1,110 @@
+{
+  "format_name": "haemonc_uranus_v1",
+  "format_version": "1.0",
+
+  "fingerprint": [
+    { "sheet": "summary", "cell": "A5", "equals": "Subpanel analysed" },
+    { "sheet": "summary", "cell": "A6", "equals": "M-code" },
+    { "sheet": "m_codes", "exists": true }
+  ],
+
+  "sheets": {
+    "summary": {
+      "extraction_type": "label_scan",
+      "scan_column": "A",
+      "value_column": "B",
+      "fields": [
+        { "label": "Sample ID",         "db_column": "sample_id",              "parse": "sample_id_split" },
+        { "label": "Date",             "db_column": "date_last_evaluated" },
+        { "label": "Subpanel analysed","db_column": "panel" },
+        { "label": "M-code",           "db_column": "m_code" },
+        { "label": "Reference:",       "db_column": "ref_genome" }
+      ]
+    },
+
+    "included": {
+      "extraction_type": "tabular",
+      "constant_fields": { "variant_category": "included" },
+      "columns": [
+        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "POS",                      "db_column": "start" },
+        { "source": "SYMBOL",                   "db_column": "gene_symbol" },
+        { "source": "HGVSc",                    "db_column": "hgvsc" },
+        { "source": "Consequence",              "db_column": "consequence" },
+        { "source": "AF",                       "db_column": "vaf" },
+        { "source": "Classification",           "db_column": "oncogenicity_classification" },
+        { "source": "Latest Classification Date","db_column": "latest_classification_date" },
+        { "source": "Comment",                  "db_column": "classification_comment" },
+        { "source": "HGVSp",                    "db_column": "hgvsp" },
+        { "source": "FILTER",                   "db_column": "vcf_filter" },
+        { "source": "Prev Count",               "db_column": "prev_count" },
+        { "source": "Latest Classification",    "db_column": "latest_classification" },
+        { "source": "Total Classifications",    "db_column": "total_classifications" },
+        { "source": "Reported",                 "db_column": "reported" },
+        { "source": "Interpreted",              "db_column": "interpreted" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    },
+
+    "pindel": {
+      "extraction_type": "tabular",
+      "constant_fields": { "variant_category": "pindel" },
+      "columns": [
+        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "POS",                      "db_column": "start" },
+        { "source": "SYMBOL",                   "db_column": "gene_symbol" },
+        { "source": "HGVSc",                    "db_column": "hgvsc" },
+        { "source": "HGVSp",                    "db_column": "hgvsp" },
+        { "source": "Consequence",              "db_column": "consequence" },
+        { "source": "AF",                       "db_column": "vaf" },
+        { "source": "FILTER",                   "db_column": "vcf_filter" },
+        { "source": "Classification",           "db_column": "oncogenicity_classification" },
+        { "source": "Latest Classification Date","db_column": "latest_classification_date" },
+        { "source": "Latest Classification",    "db_column": "latest_classification" },
+        { "source": "Total Classifications",    "db_column": "total_classifications" },
+        { "source": "Prev Count",               "db_column": "prev_count" },
+        { "source": "Comment",                  "db_column": "classification_comment" },
+        { "source": "Reported",                 "db_column": "reported" },
+        { "source": "Interpreted",              "db_column": "interpreted" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    }
+  },
+
+  "merge_strategy": {
+    "summary_x_included": { "how": "cross" }
+  },
+
+  "constant_fields": {
+    "collection_method": "clinical testing",
+    "allele_origin":     "somatic",
+    "affected_status":   "yes"
+  },
+
+  "null_sentinels": [".", "./."],
+
+  "normalisations": [
+    { "field": "oncogenicity_classification", "replace": {
+        "Likely_oncogenic":       "Likely oncogenic",
+        "Uncertain_significance": "Uncertain significance",
+        "Likely_benign":          "Likely benign"
+    }}
+  ],
+
+  "validations": {
+    "field": [
+      { "field": "oncogenicity_classification", "type": "in_list",
+        "values": [
+          "Uncertain_significance",
+          "Likely_benign", "Benign",
+          "Oncogenic", "Likely_oncogenic"
+        ]}
+    ]
+  }
+}
