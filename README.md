@@ -147,6 +147,32 @@ Each column added is logged at `WARNING` level. Column types are inferred from t
 pip install -e .
 ```
 
+`pip install -e .` does three things based on pyproject.toml:
+
+1. Installs the dependencies (pyproject.toml:10-16)
+pandas, openpyxl, sqlalchemy, psycopg2-binary, numpy
+These are pulled from PyPI into your virtual environment.
+
+2. Makes the augean package importable
+The -e flag (editable/development mode) doesn't copy the code into site-packages — it creates a link back to the repo directory. So import augean works from
+ anywhere, but changes to the source files take effect immediately without reinstalling.
+
+3. Creates the augean CLI command (pyproject.toml:21-23)
+[project.scripts]
+augean = "augean.main:main"
+This wires up the augean command in your PATH to call the main() function in augean/main.py. After install you can run:
+augean --deployment ... --db_credentials ...
+instead of:
+python3 -m augean.main --deployment ...
+
+For production deployment (not development)
+
+You'd typically drop the -e:
+pip install .
+This copies the package into site-packages as a proper install rather than linking back to the source directory — appropriate when you're not expecting to
+edit the code in place.
+
+
 ## Usage example
 
 With a deployment config:
