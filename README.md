@@ -144,7 +144,16 @@ Each column added is logged at `WARNING` level. Column types are inferred from t
 ## Installation
 
 ```bash
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -e .
+```
+
+For production (non-editable install):
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install .
 ```
 
 `pip install -e .` does three things based on pyproject.toml:
