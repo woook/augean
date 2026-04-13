@@ -149,13 +149,6 @@ source .venv/bin/activate
 pip install -e .
 ```
 
-For production (non-editable install):
-
-```bash
-python3 -m venv .venv
-.venv/bin/pip install .
-```
-
 `pip install -e .` does three things based on pyproject.toml:
 
 1. Installs the dependencies (pyproject.toml:10-16)
@@ -174,11 +167,12 @@ augean --deployment ... --db_credentials ...
 instead of:
 python3 -m augean.main --deployment ...
 
-For production deployment (not development)
-
-You'd typically drop the -e:
-pip install .
-This copies the package into site-packages as a proper install rather than linking back to the source directory — appropriate when you're not expecting to
+For production deployment (non-editable install)
+```bash
+python3 -m venv .venv
+.venv/bin/pip install .
+```
+You'd typically drop the -e as this copies the package into site-packages as a proper install rather than linking back to the source directory — appropriate when you're not expecting to
 edit the code in place.
 
 
