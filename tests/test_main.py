@@ -335,8 +335,8 @@ class TestDbWrite:
         called_names = [call.args[1] for call in mock_add_wb.call_args_list]
         assert already_done[0] not in called_names
 
-    def test_duplicate_in_samples_file_only_processed_once(self, tmp_path, monkeypatch):
-        """A workbook listed twice in --samples_file is only inserted once."""
+    def test_duplicate_in_samples_file_raises(self, tmp_path, monkeypatch):
+        """Duplicate basenames in a batch (same path twice) raise SystemExit."""
         haemonc_dir = WORKBOOKS_DIR / "haemonc"
         all_workbooks = sorted(haemonc_dir.glob("*.xlsx"))
         assert all_workbooks, "Need at least one HaemOnc workbook for this test"
@@ -346,13 +346,23 @@ class TestDbWrite:
         creds = _write_creds(tmp_path)
         argv = _argv(tmp_path, samples_file=samples, dry_run=False, db_creds=creds)
         monkeypatch.setattr(sys, "argv", argv)
-        with patch("augean.main.db.create_engine"), \
-             patch("augean.main.db.get_parsed_workbooks", return_value=[]), \
-             patch("augean.main.db.add_workbook") as mock_add_wb, \
-             patch("augean.main.db.add_variants", return_value=2), \
-             patch("augean.main.db.mark_workbook_parsed"), \
-             patch("augean.main.db.mark_workbook_failed"), \
-             patch("augean.main.db.migrate_schema"):
+        with pytest.raises(SystemExit, match="duplicate workbook filename"):
             main()
-        called_names = [call.args[1] for call in mock_add_wb.call_args_list]
-        assert called_names.count(wb.name) == 1
+
+    def test_cross_directory_duplicate_basenames_raises(self, tmp_path, monkeypatch):
+        """Two files with the same basename from different directories raise SystemExit."""
+        haemonc_dir = WORKBOOKS_DIR / "haemonc"
+        all_workbooks = sorted(haemonc_dir.glob("*.xlsx"))
+        assert all_workbooks, "Need at least one HaemOnc workbook for this test"
+        wb = all_workbooks[0]
+        other_dir = tmp_path / "other"
+        other_dir.mkdir()
+        other_copy = other_dir / wb.name
+        other_copy.write_bytes(wb.read_bytes())
+        samples = tmp_path / "samples.txt"
+        samples.write_text(f"{wb}\n{other_copy}\n")
+        creds = _write_creds(tmp_path)
+        argv = _argv(tmp_path, samples_file=samples, dry_run=False, db_creds=creds)
+        monkeypatch.setattr(sys, "argv", argv)
+        with pytest.raises(SystemExit, match="duplicate workbook filename"):
+            main()

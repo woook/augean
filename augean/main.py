@@ -109,6 +109,14 @@ def main() -> None:
 
     log.info("Found %d workbook(s) to process", len(workbook_files))
 
+    basenames = [f.name for f in workbook_files]
+    duplicates = {n for n in basenames if basenames.count(n) > 1}
+    if duplicates:
+        raise SystemExit(
+            f"error: duplicate workbook filename(s) in batch — each workbook name must be "
+            f"unique as it is used as the database key: {sorted(duplicates)}"
+        )
+
     engine = None
     if not args.dry_run:
         with open(args.db_credentials) as f:
