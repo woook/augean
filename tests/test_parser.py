@@ -571,6 +571,23 @@ class TestExtractTabularOptionalColumns:
         }
         df = extract_tabular(wb, "included", sheet_config, path)
         assert list(df["vaf"]) == pytest.approx([0.078, 0.500, 1.000])
+
+    def test_to_string_transform(self, tmp_path):
+        """to_string casts mixed int/str column values to str."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": [1, 2, "X"], "POS": [100, 200, 300]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM", "db_column": "chromosome", "transform": "to_string"},
+                {"source": "POS",   "db_column": "start"},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert list(df["chromosome"]) == ["1", "2", "X"]
+        assert all(isinstance(v, str) for v in df["chromosome"])
     """parse_workbook pindel concatenation behaviour."""
 
     def _mock_wb(self, sheetnames):

@@ -142,6 +142,8 @@ def extract_tabular(
             df[db_col] = (
                 df[db_col].astype(str).str.rstrip("%").astype(float) / 100
             )
+        elif transform == "to_string":
+            df[db_col] = df[db_col].astype(str)
 
     pending_copies: list[tuple[str, str]] = []
     for gen_col in sheet_config.get("generated_columns", []):

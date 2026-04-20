@@ -25,7 +25,7 @@
       "extraction_type": "tabular",
       "constant_fields": { "variant_category": "included" },
       "columns": [
-        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "CHROM",                    "db_column": "chromosome",  "transform": "to_string" },
         { "source": "POS",                      "db_column": "start" },
         { "source": "SYMBOL",                   "db_column": "gene_symbol" },
         { "source": "HGVSc",                    "db_column": "hgvsc" },
@@ -52,7 +52,7 @@
       "extraction_type": "tabular",
       "constant_fields": { "variant_category": "pindel" },
       "columns": [
-        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "CHROM",                    "db_column": "chromosome",  "transform": "to_string" },
         { "source": "POS",                      "db_column": "start" },
         { "source": "SYMBOL",                   "db_column": "gene_symbol" },
         { "source": "HGVSc",                    "db_column": "hgvsc" },
