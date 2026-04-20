@@ -12,6 +12,46 @@ CONFIGS_DIR = Path(__file__).parent.parent / "configs"
 
 
 # ---------------------------------------------------------------------------
+# Acceptance test CLI options
+# ---------------------------------------------------------------------------
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--db_credentials",
+        default=None,
+        help="Path to db_credentials.json for acceptance tests",
+    )
+    parser.addoption(
+        "--acceptance_schema",
+        default="testdirectory",
+        help="PostgreSQL schema to use for acceptance tests (default: testdirectory)",
+    )
+
+
+@pytest.fixture(scope="session")
+def acceptance_db_credentials(request):
+    """Path to DB credentials JSON for acceptance tests. Skips if not supplied."""
+    creds_path = request.config.getoption("--db_credentials")
+    if creds_path is None:
+        pytest.skip("--db_credentials not provided; skipping acceptance test")
+    return Path(creds_path)
+
+
+@pytest.fixture(scope="session")
+def acceptance_schema(request):
+    return request.config.getoption("--acceptance_schema")
+
+
+@pytest.fixture(scope="session")
+def acceptance_engine(acceptance_db_credentials):
+    """SQLAlchemy engine for acceptance tests."""
+    from augean.db import create_engine as augean_create_engine
+    with open(acceptance_db_credentials) as f:
+        creds = json.load(f)
+    return augean_create_engine(creds)
+
+
+# ---------------------------------------------------------------------------
 # Real workbook fixtures
 # ---------------------------------------------------------------------------
 

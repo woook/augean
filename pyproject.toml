@@ -26,4 +26,7 @@ where = ["."]
 include = ["augean*"]
 
 [tool.pytest.ini_options]
-addopts = "-n auto"
+addopts = "-n auto -m 'not acceptance'"
+markers = [
+    "acceptance: end-to-end acceptance tests requiring a live database (deselected by default)",
+]
