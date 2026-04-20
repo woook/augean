@@ -23,6 +23,7 @@ class TestLoadConfigs:
         names = {c["format_name"] for c in configs}
         assert "rd_dias_v1" in names
         assert "haemonc_uranus_v1" in names
+        assert "haemonc_uranus_v0" in names
 
     def test_required_keys_present(self):
         configs = load_configs(CONFIGS_DIR)
@@ -204,3 +205,35 @@ class TestRealWorkbookFingerprint:
     def test_haemonc_detected(self, haemonc_workbook, all_configs):
         cfg = get_config_for_workbook(haemonc_workbook, all_configs)
         assert cfg["format_name"] == "haemonc_uranus_v1"
+
+    def test_haemonc_v1_detected_without_m_codes_sheet(self, all_configs):
+        """v1 fingerprint no longer requires m_codes sheet."""
+        wb = MagicMock()
+        wb.sheetnames = ["summary", "included", "pindel"]  # no m_codes
+
+        def sheet(name):
+            s = MagicMock()
+            cells = {"summary": {"A5": "Subpanel analysed", "A6": "M-code"}}.get(name, {})
+            s.__getitem__ = lambda self, k: MagicMock(value=cells.get(k))
+            s.iter_rows = MagicMock(return_value=iter([[]]))
+            return s
+
+        wb.__getitem__ = lambda self, k: sheet(k)
+        cfg = get_config_for_workbook(wb, all_configs)
+        assert cfg["format_name"] == "haemonc_uranus_v1"
+
+    def test_haemonc_v0_detected(self, all_configs):
+        """v0 fingerprint: A8='Sample ID', F12='Subpanel analysed'."""
+        wb = MagicMock()
+        wb.sheetnames = ["summary", "included", "excluded", "pindel"]
+
+        def sheet(name):
+            s = MagicMock()
+            cells = {"summary": {"A8": "Sample ID", "F12": "Subpanel analysed"}}.get(name, {})
+            s.__getitem__ = lambda self, k: MagicMock(value=cells.get(k))
+            s.iter_rows = MagicMock(return_value=iter([[]]))
+            return s
+
+        wb.__getitem__ = lambda self, k: sheet(k)
+        cfg = get_config_for_workbook(wb, all_configs)
+        assert cfg["format_name"] == "haemonc_uranus_v0"
