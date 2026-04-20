@@ -257,6 +257,18 @@ class TestCoerceDateLastEvaluated:
         result = coerce_date_last_evaluated(df)
         assert list(result.columns) == ["other_col"]
 
+    def test_leading_backtick_stripped(self):
+        """Backtick prefix (Excel text-force artefact) is stripped before parsing."""
+        df = pd.DataFrame({"date_last_evaluated": ["`13/01/2026"]})
+        result = coerce_date_last_evaluated(df)
+        assert result["date_last_evaluated"].iloc[0] == pd.Timestamp("2026-01-13")
+
+    def test_leading_apostrophe_stripped(self):
+        """Apostrophe prefix is also stripped."""
+        df = pd.DataFrame({"date_last_evaluated": ["'13/01/2026"]})
+        result = coerce_date_last_evaluated(df)
+        assert result["date_last_evaluated"].iloc[0] == pd.Timestamp("2026-01-13")
+
 
     def test_full_pipeline(self):
         df = pd.DataFrame({

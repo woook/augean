@@ -87,8 +87,9 @@ def apply_derived_fields(df: pd.DataFrame, derived_fields: list[dict]) -> pd.Dat
 def coerce_date_last_evaluated(df: pd.DataFrame) -> pd.DataFrame:
     """Normalise date_last_evaluated to a parseable date value.
 
-    Handles two cases caused by manual workbook edits:
-    - Multiple dates separated by ' / ' (e.g. '07/01/2025 / 13/01/2026') —
+    Handles cases caused by manual workbook edits:
+    - Leading backtick or apostrophe (Excel text-prefix artefact) — stripped.
+    - Multiple dates separated by ' / ' or ' - ' (e.g. '07/01/2025 / 13/01/2026') —
       takes the last entry, which is the most recent review date.
     - A plain date string (e.g. '13/01/2026') — parses it to datetime.
 
@@ -103,7 +104,7 @@ def coerce_date_last_evaluated(df: pd.DataFrame) -> pd.DataFrame:
             return val
         if hasattr(val, 'date'):  # already a datetime-like
             return val
-        s = str(val).strip()
+        s = str(val).strip().lstrip("`'")
         if re.search(r'\s+[/\-]\s+', s):
             s = re.split(r'\s+[/\-]\s+', s)[-1].strip()
             log.warning(
