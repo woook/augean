@@ -237,7 +237,7 @@ Run the full test suite:
 pytest
 ```
 
-162 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+163 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
 Tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in `pyproject.toml`). Wall-clock time ~30s.
 
@@ -245,11 +245,11 @@ Tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in 
 
 | Module | Tests | What it covers |
 |---|---|---|
-| `test_config.py` | 23 | Config loading, fingerprint rule types, format auto-detection against real workbooks, v0/v1 fingerprint detection |
+| `test_config.py` | 22 | Config loading, fingerprint rule types, format auto-detection against real workbooks, v0/v1 fingerprint detection |
 | `test_db.py` | 14 | SQLAlchemy insert/status/migrate operations |
 | `test_loader.py` | 6 | Workbook opening, format identification |
-| `test_parser.py` | 44 | All extraction types, optional columns, transform types (percent_to_decimal, to_string), pindel sheet extraction, merge logic, real-workbook integration |
-| `test_transformer.py` | 31 | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |
+| `test_parser.py` | 43 | All extraction types, optional columns, transform types (percent_to_decimal, to_string), pindel sheet extraction, merge logic, real-workbook integration |
+| `test_transformer.py` | 32 | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |
 | `test_validator.py` | 20 | Structural, field, cross-sheet, and ACGS validators |
 | `test_main.py` | 27 | CLI pipeline: dry run, deployment config, all error paths, DB write path, duplicate-submission guard, skip-already-parsed, duplicate basename rejection |
 
