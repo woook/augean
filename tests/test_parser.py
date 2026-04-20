@@ -556,8 +556,21 @@ class TestExtractTabularOptionalColumns:
         with pytest.raises(ValueError):
             extract_tabular(wb, "included", sheet_config, path)
 
-
-class TestParseWorkbookPindel:
+    def test_percent_to_decimal_transform(self, tmp_path):
+        """percent_to_decimal strips % and divides by 100."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": ["1", "2", "3"], "AF": ["7.8%", "50.0%", "100.0%"]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM", "db_column": "chromosome"},
+                {"source": "AF",    "db_column": "vaf", "transform": "percent_to_decimal"},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert list(df["vaf"]) == pytest.approx([0.078, 0.500, 1.000])
     """parse_workbook pindel concatenation behaviour."""
 
     def _mock_wb(self, sheetnames):

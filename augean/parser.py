@@ -138,6 +138,10 @@ def extract_tabular(
             df[db_col] = df[db_col].str.lower()
         elif transform == "boolean_to_yes_no":
             df[db_col] = df[db_col].map({True: "yes", False: "no"})
+        elif transform == "percent_to_decimal":
+            df[db_col] = (
+                df[db_col].astype(str).str.rstrip("%").astype(float) / 100
+            )
 
     pending_copies: list[tuple[str, str]] = []
     for gen_col in sheet_config.get("generated_columns", []):
