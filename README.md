@@ -100,7 +100,7 @@ Two tables in the target PostgreSQL database are written:
 
 | Table | Content |
 |---|---|
-| `<schema>.<workbooks_table>` (default `testdirectory.staging_workbooks`) | One row per workbook: filename, processing date, detected format, and parse status (`TRUE` = success, `FALSE` = failed with error message). |
+| `<schema>.<workbooks_table>` (default `testdirectory.staging_workbooks`) | One row per workbook: filename, processing date, detected format, and parse status (`TRUE` = success, `FALSE` = failed with error message). Workbooks with `parse_status = TRUE` are skipped on re-submission, preventing duplicate variant inserts. |
 | `<schema>.<table>` (default `testdirectory.inca`) | One row per variant per sample, containing all extracted, validated, and normalised fields (chromosome, position, alleles, gene symbol, HGVSc, classification, ACGS criteria, clinical indication, sample metadata, etc.). |
 
 ### Error CSVs (written on failure)
@@ -205,7 +205,7 @@ Run the full test suite:
 pytest
 ```
 
-140 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+142 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
 ### Test structure
 
@@ -217,7 +217,7 @@ pytest
 | `test_parser.py` | 39 | All extraction types, split parse types, pindel sheet extraction, merge logic, real-workbook integration |
 | `test_transformer.py` | 19 | Null sentinels, normalisations, ACGS criteria nulling, comment building |
 | `test_validator.py` | 20 | Structural, field, cross-sheet, and ACGS validators |
-| `test_main.py` | 22 | CLI pipeline: dry run, deployment config, all error paths, DB write path |
+| `test_main.py` | 24 | CLI pipeline: dry run, deployment config, all error paths, DB write path, duplicate-submission guard |
 
 Most tests use mock workbooks built in-memory. Integration tests run against anonymised workbooks committed to `tests/test_data/workbooks/`. Real patient workbooks in that directory are gitignored.
 
