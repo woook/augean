@@ -132,7 +132,7 @@ def main() -> None:
             log.info("Skipping '%s': already successfully parsed", wb_name)
             continue
         log.info("--- Processing: %s ---", wb_name)
-        _process_workbook(
+        processed = _process_workbook(
             wb_path=wb_path,
             wb_name=wb_name,
             configs=configs,
@@ -140,16 +140,18 @@ def main() -> None:
             output_dir=output_dir,
             args=args,
         )
+        if processed:
+            already_parsed.add(wb_name)
 
     log.info("Done.")
 
 
-def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) -> None:
+def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) -> bool:
     try:
         workbook = loader.load_workbook(wb_path)
     except OSError as exc:
         log.error("Cannot open '%s': %s", wb_name, exc)
-        return
+        return False
 
     # Format detection
     try:
@@ -157,14 +159,14 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
             matched = [c for c in configs if c["format_name"] == args.format_override]
             if not matched:
                 log.error("Format override '%s' not found in configs", args.format_override)
-                return
+                return False
             cfg = matched[0]
         else:
             cfg = loader.detect_format(workbook, configs)
         log.info("Detected format: %s", cfg["format_name"])
     except (WorkbookFormatUnknownError, AmbiguousWorkbookFormatError) as exc:
         log.error("Format detection failed for '%s': %s", wb_name, exc)
-        return
+        return False
 
     wb_schema = args.db_schema
     wb_table = args.db_workbooks_table
@@ -181,7 +183,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         if engine is not None:
             db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
-        return
+        return False
 
     # Validate
     errors = validator.validate_all(workbook, raw_df, cfg, wb_name)
@@ -192,7 +194,7 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         if engine is not None:
             db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
-        return
+        return False
 
     # Transform
     try:
@@ -203,11 +205,11 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         if engine is not None:
             db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
-        return
+        return False
 
     if args.dry_run:
         log.info("DRY RUN: would insert %d row(s) for '%s'", len(final_df), wb_name)
-        return
+        return False
 
     # Insert
     db_cfg = cfg.get("db", {})
@@ -221,15 +223,16 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         log.error("Schema mismatch for '%s': %s", wb_name, exc)
         db.mark_workbook_failed(engine, wb_name, [str(exc)], schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, [str(exc)])
-        return
+        return False
     except Exception as exc:
         log.error("DB write failed for '%s': %s", wb_name, exc)
         errors = [f"DB write error: {exc}"]
         db.mark_workbook_failed(engine, wb_name, errors, schema=wb_schema, workbooks_table=wb_table)
         _write_error_csv(output_dir, wb_name, errors)
-        return
+        return False
     log.info("Inserted %d row(s) for '%s'", rows, wb_name)
     db.mark_workbook_parsed(engine, wb_name, schema=wb_schema, workbooks_table=wb_table)
+    return True
 
 
 def _write_error_csv(output_dir: Path, workbook_name: str, errors: list) -> None:
