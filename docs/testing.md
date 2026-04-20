@@ -1,12 +1,29 @@
 # Test Suite Reference
 
-163 tests across 7 modules (162 passing, 1 skipped when only one RD Dias workbook is present). All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
+163 unit/integration tests across 7 modules (162 passing, 1 skipped), plus acceptance tests requiring a live database. All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
 
 ## Running tests
 
 ```bash
-# Full suite — parallel by default (~30s wall clock)
+# Unit and integration suite (parallel, ~30s)
 pytest
+
+# Acceptance tests — parser check only (no DB needed)
+pytest tests/test_acceptance.py -m acceptance -k "parser" \
+    --override-ini="addopts="
+
+# Acceptance tests — full (workbook must be inserted into DB first)
+pytest tests/test_acceptance.py -m acceptance \
+    --db_credentials /path/to/creds.json \
+    [--acceptance_schema testdirectory] \
+    --override-ini="addopts="
+
+# Verbose output for documentation
+pytest tests/test_acceptance.py -m acceptance \
+    --db_credentials /path/to/creds.json \
+    --acceptance_schema testdirectory \
+    -v -s --log-cli-level=INFO \
+    --override-ini="addopts=" 2>&1 | tee results.txt
 ```
 
 ---
@@ -152,21 +169,52 @@ UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py
 
 ---
 
+## `test_acceptance.py` — acceptance tests (excluded from default run)
+
+Two orthogonal checks per workbook using a committed golden CSV snapshot as the shared reference:
+
+| Test | DB needed | What it catches |
+|---|---|---|
+| `test_parser_matches_golden` | No | Parser/transformer regression — pipeline output changed unexpectedly |
+| `test_db_matches_golden` | Yes | DB round-trip bug — insert/retrieve dropped rows, extra rows, or corrupted values |
+
+The golden file is the key: it is independent of both the pipeline and the database, verified by human inspection when first created. When pipeline output is intentionally changed, run `python scripts/regenerate_golden.py`, inspect the diff, and commit it in the same PR.
+
+Acceptance tests are parametrized automatically from the golden files in `tests/test_data/golden/`. Adding a new workbook to acceptance testing:
+
+1. Ensure the workbook is in `tests/test_data/workbooks/haemonc/` (anonymised)
+2. Run `python scripts/regenerate_golden.py` to create its golden file
+3. Inspect the golden file, commit it
+4. The acceptance tests pick it up automatically — no code changes needed
+
+### Comparison approach
+
+All column values are coerced to string before comparison to avoid dtype differences between the pipeline (where ID columns are `str`) and the CSV-loaded golden file (where pandas reads numeric-looking strings as `int64`). Datetime columns are normalised to `YYYY-MM-DD`. NaN/None values are normalised to empty string.
+
+Columns excluded from comparison:
+- `local_id`, `linking_id` — time-based UUIDs generated at parse time, different on every run
+- DB-only columns not written by augean (`id`, `east_panels_id`, `submission_id`, etc.)
+
+---
+
 ## Test data
 
 Anonymised workbooks (no patient data) are committed to the repo and used by CI:
 
 ```text
-tests/test_data/workbooks/
-  rd_dias/
-    148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)
-  haemonc/
-    999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx  ← committed (anonymised)
-    <additional workbooks for smoke testing — gitignored>
+tests/test_data/
+  workbooks/
+    rd_dias/
+      148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)
+    haemonc/
+      999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx  ← committed (anonymised)
+      <additional workbooks for smoke testing — gitignored>
+  golden/
+    999999999-99999K9999-99NGSH999-9999-M-99999999.csv   ← committed golden snapshot
 ```
 
-Real patient workbooks placed in these directories are gitignored by pattern and will never be committed. The gitignore explicitly allowlists only the two anonymised filenames above.
+Real patient workbooks placed in `workbooks/` are gitignored and will never be committed.
 
 Tests that depend on workbook fixtures skip gracefully if the file is absent, so the suite remains runnable in any environment.
 
-Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed.
+Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed. To also include them in acceptance testing, run `scripts/regenerate_golden.py` afterwards.

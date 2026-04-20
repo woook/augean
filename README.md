@@ -237,9 +237,9 @@ Run the full test suite:
 pytest
 ```
 
-163 tests across 7 modules. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+163 unit/integration tests across 7 modules, plus acceptance tests with a live database. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
-Tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in `pyproject.toml`). Wall-clock time ~30s.
+Unit and integration tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in `pyproject.toml`). Wall-clock time ~30s.
 
 ### Test structure
 
@@ -252,15 +252,44 @@ Tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in 
 | `test_transformer.py` | 32 | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |
 | `test_validator.py` | 20 | Structural, field, cross-sheet, and ACGS validators |
 | `test_main.py` | 27 | CLI pipeline: dry run, deployment config, all error paths, DB write path, duplicate-submission guard, skip-already-parsed, duplicate basename rejection |
+| `test_acceptance.py` | 2 | **Acceptance** (excluded from default run — see below) |
 
 Most tests use mock workbooks built in-memory. Integration tests run against anonymised workbooks committed to `tests/test_data/workbooks/`. Real patient workbooks in that directory are gitignored.
 
-### Running in parallel
-
-The test suite runs in parallel automatically — `pytest-xdist` is configured with `-n auto` in `pyproject.toml`. Just run:
+### Running the unit/integration suite
 
 ```bash
 pytest
+```
+
+### Acceptance tests
+
+`test_acceptance.py` contains two orthogonal checks per workbook against a committed golden CSV snapshot:
+
+| Test | What it catches |
+|---|---|
+| `test_parser_matches_golden` | Parser/transformer regression — pipeline output changed unexpectedly |
+| `test_db_matches_golden` | DB round-trip bug — insert/retrieve dropped rows, extra rows, or corrupted values |
+
+Acceptance tests are excluded from the default `pytest` run. Run them explicitly:
+
+```bash
+# Parser check only (no database needed)
+pytest tests/test_acceptance.py -m acceptance -k "parser" \
+    --override-ini="addopts="
+
+# Full check (workbook must be inserted into the DB first)
+pytest tests/test_acceptance.py -m acceptance \
+    --db_credentials /path/to/creds.json \
+    [--acceptance_schema testdirectory] \
+    --override-ini="addopts="
+```
+
+When the pipeline output is intentionally changed (new column, new normalisation), regenerate the golden files and commit the diff:
+
+```bash
+python scripts/regenerate_golden.py
+git diff tests/test_data/golden/
 ```
 
 ### HaemOnc smoke tests

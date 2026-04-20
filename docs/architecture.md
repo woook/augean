@@ -196,3 +196,5 @@ If you are new to the codebase, read these files in this order:
 6. `augean/db.py` — database operations
 
 The test files are also a useful reference — each module has a corresponding test file that shows inputs and expected outputs for each function.
+
+`tests/test_acceptance.py` and `tests/test_data/golden/` document the expected end-to-end output for the committed anonymised workbooks. Run `python scripts/regenerate_golden.py` to update the golden files when pipeline output changes intentionally.
