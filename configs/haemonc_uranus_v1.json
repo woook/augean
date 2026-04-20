@@ -4,8 +4,7 @@
 
   "fingerprint": [
     { "sheet": "summary", "cell": "A5", "equals": "Subpanel analysed" },
-    { "sheet": "summary", "cell": "A6", "equals": "M-code" },
-    { "sheet": "m_codes", "exists": true }
+    { "sheet": "summary", "cell": "A6", "equals": "M-code" }
   ],
 
   "sheets": {

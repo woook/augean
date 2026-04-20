@@ -1,0 +1,114 @@
+{
+  "format_name": "haemonc_uranus_v0",
+  "format_version": "0.1",
+
+  "_comment": "Pre-v2.11.0 HaemOnc Uranus workbooks (generated before May 2025). Summary layout differs from v1: labels are split between column A (row 8) and column F (rows 10-12). No M-code or m_codes sheet. May include an 'excluded' sheet (filtered-out variants, not extracted). Columns introduced by --join_columns (Prev Count, Latest Classification, Total Classifications) and HGVSp may be absent in older batches and are therefore marked optional.",
+
+  "fingerprint": [
+    { "sheet": "summary", "cell": "A8", "equals": "Sample ID" },
+    { "sheet": "summary", "cell": "F12", "equals": "Subpanel analysed" }
+  ],
+
+  "sheets": {
+    "summary": {
+      "extraction_type": "named_cells",
+      "fields": [
+        { "cell": "B8",  "db_column": "sample_id", "parse": "sample_id_split" },
+        { "cell": "G11", "db_column": "date_last_evaluated" },
+        { "cell": "G12", "db_column": "panel" },
+        {
+          "extraction": "sentinel_scan",
+          "scan_column": "A",
+          "sentinel_value": "Reference:",
+          "value_column": "B",
+          "db_column": "ref_genome"
+        }
+      ]
+    },
+
+    "included": {
+      "extraction_type": "tabular",
+      "constant_fields": { "variant_category": "included" },
+      "columns": [
+        { "source": "CHROM",                     "db_column": "chromosome" },
+        { "source": "POS",                       "db_column": "start" },
+        { "source": "SYMBOL",                    "db_column": "gene_symbol" },
+        { "source": "HGVSc",                     "db_column": "hgvsc" },
+        { "source": "HGVSp",                     "db_column": "hgvsp",                    "optional": true },
+        { "source": "Consequence",               "db_column": "consequence" },
+        { "source": "AF",                        "db_column": "vaf" },
+        { "source": "FILTER",                    "db_column": "vcf_filter",               "optional": true },
+        { "source": "Classification",            "db_column": "oncogenicity_classification" },
+        { "source": "Latest Classification Date","db_column": "latest_classification_date","optional": true },
+        { "source": "Latest Classification",     "db_column": "latest_classification",    "optional": true },
+        { "source": "Total Classifications",     "db_column": "total_classifications",    "optional": true },
+        { "source": "Prev Count",                "db_column": "prev_count",               "optional": true },
+        { "source": "Comment",                   "db_column": "classification_comment" },
+        { "source": "Reported",                  "db_column": "reported",                 "optional": true },
+        { "source": "Interpreted",               "db_column": "interpreted" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    },
+
+    "pindel": {
+      "extraction_type": "tabular",
+      "constant_fields": { "variant_category": "pindel" },
+      "columns": [
+        { "source": "CHROM",                     "db_column": "chromosome" },
+        { "source": "POS",                       "db_column": "start" },
+        { "source": "SYMBOL",                    "db_column": "gene_symbol" },
+        { "source": "HGVSc",                     "db_column": "hgvsc" },
+        { "source": "HGVSp",                     "db_column": "hgvsp",                    "optional": true },
+        { "source": "Consequence",               "db_column": "consequence" },
+        { "source": "AF",                        "db_column": "vaf" },
+        { "source": "FILTER",                    "db_column": "vcf_filter",               "optional": true },
+        { "source": "Classification",            "db_column": "oncogenicity_classification" },
+        { "source": "Latest Classification Date","db_column": "latest_classification_date","optional": true },
+        { "source": "Latest Classification",     "db_column": "latest_classification",    "optional": true },
+        { "source": "Total Classifications",     "db_column": "total_classifications",    "optional": true },
+        { "source": "Prev Count",                "db_column": "prev_count",               "optional": true },
+        { "source": "Comment",                   "db_column": "classification_comment" },
+        { "source": "Reported",                  "db_column": "reported",                 "optional": true },
+        { "source": "Interpreted",               "db_column": "interpreted" }
+      ],
+      "generated_columns": [
+        { "db_column": "local_id",   "generation": "uuid_time" },
+        { "db_column": "linking_id", "source": "local_id" }
+      ]
+    }
+  },
+
+  "merge_strategy": {
+    "summary_x_included": { "how": "cross" }
+  },
+
+  "constant_fields": {
+    "collection_method": "clinical testing",
+    "allele_origin":     "somatic",
+    "affected_status":   "yes"
+  },
+
+  "null_sentinels": [".", "./."],
+
+  "normalisations": [
+    { "field": "oncogenicity_classification", "replace": {
+        "Likely_oncogenic":       "Likely oncogenic",
+        "Uncertain_significance": "Uncertain significance",
+        "Likely_benign":          "Likely benign"
+    }}
+  ],
+
+  "validations": {
+    "field": [
+      { "field": "oncogenicity_classification", "type": "in_list",
+        "values": [
+          "Uncertain_significance",
+          "Likely_benign", "Benign",
+          "Oncogenic", "Likely_oncogenic"
+        ]}
+    ]
+  }
+}
