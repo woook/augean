@@ -252,6 +252,12 @@ class TestCoerceDateLastEvaluated:
         result = coerce_date_last_evaluated(df)
         assert pd.isna(result["date_last_evaluated"].iloc[0])
 
+    def test_all_none_returns_datetime_dtype(self):
+        """All-NaT column must still return a datetime dtype, not object."""
+        df = pd.DataFrame({"date_last_evaluated": [None, None]})
+        result = coerce_date_last_evaluated(df)
+        assert result["date_last_evaluated"].dtype.kind == "M"  # datetime
+
     def test_column_absent_noop(self):
         df = pd.DataFrame({"other_col": [1]})
         result = coerce_date_last_evaluated(df)

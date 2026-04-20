@@ -112,11 +112,11 @@ def coerce_date_last_evaluated(df: pd.DataFrame) -> pd.DataFrame:
             )
         try:
             return pd.to_datetime(s, dayfirst=True)
-        except Exception:
+        except (ValueError, TypeError):
             log.warning("Could not parse date_last_evaluated value: '%s'", s)
             return pd.NaT
 
-    df[col] = df[col].apply(_resolve)
+    df[col] = pd.to_datetime(df[col].apply(_resolve), errors="coerce")
     return df
 
 
