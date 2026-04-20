@@ -118,8 +118,19 @@ def main() -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    already_parsed: set[str] = set()
+    if engine is not None:
+        already_parsed = set(
+            db.get_parsed_workbooks(engine, schema=args.db_schema, workbooks_table=args.db_workbooks_table)
+        )
+        if already_parsed:
+            log.info("%d workbook(s) already in database and will be skipped", len(already_parsed))
+
     for wb_path in workbook_files:
         wb_name = wb_path.name
+        if wb_name in already_parsed:
+            log.info("Skipping '%s': already successfully parsed", wb_name)
+            continue
         log.info("--- Processing: %s ---", wb_name)
         _process_workbook(
             wb_path=wb_path,
