@@ -90,6 +90,14 @@
 
   "normalisations": [
     { "field": "oncogenicity_classification", "replace": {
+        "VUS":              "Uncertain_significance",
+        "Likely benign":   "Likely_benign",
+        "Likely Benign":   "Likely_benign",
+        "Likely Pathogenic": "Likely_oncogenic",
+        "Likely pathogenic": "Likely_oncogenic",
+        "Pathogenic":      "Oncogenic"
+    }},
+    { "field": "oncogenicity_classification", "replace": {
         "Likely_oncogenic":       "Likely oncogenic",
         "Uncertain_significance": "Uncertain significance",
         "Likely_benign":          "Likely benign"
@@ -100,9 +108,10 @@
     "field": [
       { "field": "oncogenicity_classification", "type": "in_list",
         "values": [
-          "Uncertain_significance",
-          "Likely_benign", "Benign",
-          "Oncogenic", "Likely_oncogenic"
+          "Uncertain_significance", "VUS",
+          "Likely_benign", "Benign", "Likely benign", "Likely Benign",
+          "Oncogenic", "Pathogenic",
+          "Likely_oncogenic", "Likely Pathogenic", "Likely pathogenic"
         ]}
     ]
   }

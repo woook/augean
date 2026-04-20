@@ -56,6 +56,33 @@ class TestApplyNormalisations:
         result = apply_normalisations(df, [])
         assert list(result["field"]) == ["val"]
 
+    def test_two_pass_normalisation_chains(self):
+        """Multi-pass normalisations chain: alias → canonical → final."""
+        norms = [
+            {"field": "oncogenicity_classification", "replace": {
+                "VUS":               "Uncertain_significance",
+                "Likely benign":     "Likely_benign",
+                "Likely Benign":     "Likely_benign",
+                "Likely Pathogenic": "Likely_oncogenic",
+                "Likely pathogenic": "Likely_oncogenic",
+                "Pathogenic":        "Oncogenic",
+            }},
+            {"field": "oncogenicity_classification", "replace": {
+                "Likely_oncogenic":       "Likely oncogenic",
+                "Uncertain_significance": "Uncertain significance",
+                "Likely_benign":          "Likely benign",
+            }},
+        ]
+        raw = ["VUS", "Likely benign", "Likely Benign",
+               "Likely Pathogenic", "Likely pathogenic",
+               "Pathogenic", "Benign", "Oncogenic"]
+        df = pd.DataFrame({"oncogenicity_classification": raw})
+        result = apply_normalisations(df, norms)
+        expected = ["Uncertain significance", "Likely benign", "Likely benign",
+                    "Likely oncogenic", "Likely oncogenic",
+                    "Oncogenic", "Benign", "Oncogenic"]
+        assert list(result["oncogenicity_classification"]) == expected
+
 
 class TestMakeAcgsCriteriaNull:
     def test_replaces_na_with_nan(self):
