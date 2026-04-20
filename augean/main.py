@@ -180,7 +180,12 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
     wb_table = args.db_workbooks_table
 
     if engine is not None:
-        db.add_workbook(engine, wb_name, cfg["format_name"], schema=wb_schema, workbooks_table=wb_table)
+        try:
+            db.add_workbook(engine, wb_name, cfg["format_name"], schema=wb_schema, workbooks_table=wb_table)
+        except Exception as exc:
+            log.error("Workbook tracking insert failed for '%s': %s", wb_name, exc)
+            _write_error_csv(output_dir, wb_name, [f"Workbook tracking error: {exc}"])
+            return False
 
     # Parse
     try:
@@ -239,7 +244,12 @@ def _process_workbook(*, wb_path, wb_name, configs, engine, output_dir, args) ->
         _write_error_csv(output_dir, wb_name, errors)
         return False
     log.info("Inserted %d row(s) for '%s'", rows, wb_name)
-    db.mark_workbook_parsed(engine, wb_name, schema=wb_schema, workbooks_table=wb_table)
+    try:
+        db.mark_workbook_parsed(engine, wb_name, schema=wb_schema, workbooks_table=wb_table)
+    except Exception as exc:
+        log.error("Failed to mark workbook parsed for '%s': %s", wb_name, exc)
+        _write_error_csv(output_dir, wb_name, [f"Workbook tracking error: {exc}"])
+        return False
     return True
 
 

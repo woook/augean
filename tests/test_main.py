@@ -366,3 +366,34 @@ class TestDbWrite:
         monkeypatch.setattr(sys, "argv", argv)
         with pytest.raises(SystemExit, match="duplicate workbook filename"):
             main()
+
+    def test_add_workbook_failure_writes_csv_and_continues(self, tmp_path, monkeypatch, db_argv):
+        """add_workbook raising does not abort the batch; writes error CSV, returns False."""
+        monkeypatch.setattr(sys, "argv", db_argv)
+        with patch("augean.main.db.create_engine"), \
+             patch("augean.main.db.get_parsed_workbooks", return_value=[]), \
+             patch("augean.main.db.add_workbook", side_effect=Exception("tracking boom")), \
+             patch("augean.main.db.add_variants") as mock_insert, \
+             patch("augean.main.db.mark_workbook_parsed"), \
+             patch("augean.main.db.mark_workbook_failed"), \
+             patch("augean.main.db.migrate_schema"):
+            main()
+        mock_insert.assert_not_called()
+        csvs = list(tmp_path.glob("*_errors.csv"))
+        assert len(csvs) > 0
+        assert "tracking boom" in csvs[0].read_text()
+
+    def test_mark_workbook_parsed_failure_writes_csv(self, tmp_path, monkeypatch, db_argv):
+        """mark_workbook_parsed raising writes error CSV and returns False."""
+        monkeypatch.setattr(sys, "argv", db_argv)
+        with patch("augean.main.db.create_engine"), \
+             patch("augean.main.db.get_parsed_workbooks", return_value=[]), \
+             patch("augean.main.db.add_workbook"), \
+             patch("augean.main.db.add_variants", return_value=2), \
+             patch("augean.main.db.mark_workbook_parsed", side_effect=Exception("mark boom")), \
+             patch("augean.main.db.mark_workbook_failed"), \
+             patch("augean.main.db.migrate_schema"):
+            main()
+        csvs = list(tmp_path.glob("*_errors.csv"))
+        assert len(csvs) > 0
+        assert "mark boom" in csvs[0].read_text()
