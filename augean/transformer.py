@@ -1,4 +1,5 @@
 """Normalisation and derived-field transformations."""
+import re
 import logging
 
 import numpy as np
@@ -103,8 +104,8 @@ def coerce_date_last_evaluated(df: pd.DataFrame) -> pd.DataFrame:
         if hasattr(val, 'date'):  # already a datetime-like
             return val
         s = str(val).strip()
-        if " / " in s:
-            s = s.split(" / ")[-1].strip()
+        if re.search(r'\s+[/\-]\s+', s):
+            s = re.split(r'\s+[/\-]\s+', s)[-1].strip()
             log.warning(
                 "date_last_evaluated contained multiple dates; using last: '%s'", s
             )

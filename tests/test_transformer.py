@@ -195,6 +195,18 @@ class TestCoerceDateLastEvaluated:
         result = coerce_date_last_evaluated(df)
         assert result["date_last_evaluated"].iloc[0] == pd.Timestamp("2026-01-02")
 
+    def test_hyphen_separator(self):
+        """Dates separated by ' - ' instead of ' / '."""
+        df = pd.DataFrame({"date_last_evaluated": ["07/01/2025 - 13/01/2026"]})
+        result = coerce_date_last_evaluated(df)
+        assert result["date_last_evaluated"].iloc[0] == pd.Timestamp("2026-01-13")
+
+    def test_hyphen_same_month(self):
+        """22/12/2025 - 23/12/2025 → 23 Dec 2025."""
+        df = pd.DataFrame({"date_last_evaluated": ["22/12/2025 - 23/12/2025"]})
+        result = coerce_date_last_evaluated(df)
+        assert result["date_last_evaluated"].iloc[0] == pd.Timestamp("2025-12-23")
+
     def test_single_string_date_parsed(self):
         """Plain string date is parsed correctly."""
         df = pd.DataFrame({"date_last_evaluated": ["13/01/2026"]})
