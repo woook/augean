@@ -1,35 +1,24 @@
 # Test Suite Reference
 
-140 tests across 7 modules (139 passing, 1 skipped when only one RD Dias workbook is present). All tests use pytest.
+163 tests across 7 modules (162 passing, 1 skipped when only one RD Dias workbook is present). All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
 
 ## Running tests
 
 ```bash
-# Full suite (sequential)
+# Full suite — parallel by default (~30s wall clock)
 pytest
-
-# Parallel by file group (~34s wall clock)
-pytest tests/test_config.py tests/test_db.py tests/test_loader.py \
-       tests/test_transformer.py tests/test_validator.py & p1=$!
-pytest tests/test_parser.py & p2=$!
-pytest tests/test_main.py & p3=$!
-status=0
-wait "$p1" || status=$?
-wait "$p2" || status=$?
-wait "$p3" || status=$?
-test "$status" -eq 0
 ```
 
 ---
 
-## `test_config.py` — 20 tests
+## `test_config.py` — 22 tests
 
 | Class | Tests |
 |-------|-------|
-| `TestLoadConfigs` | Loads both configs from dir; validates required keys present; raises `ConfigValidationError` on missing key; handles empty dir |
+| `TestLoadConfigs` | Loads all three configs from dir; validates required keys present; raises `ConfigValidationError` on missing key; handles empty dir |
 | `TestFingerprintEvaluation` | Each fingerprint rule type — `equals`, `matches_pattern`, `sheet_exists`, `sheet_pattern`, `has_columns` — pass and fail variants; all rules must match |
 | `TestGetConfigForWorkbook` | Raises `WorkbookFormatUnknownError` on unknown format; raises `AmbiguousWorkbookFormatError` on ambiguous match |
-| `TestRealWorkbookFingerprint` | **Anonymised workbooks**: RD Dias and HaemOnc correctly auto-detected |
+| `TestRealWorkbookFingerprint` | **Anonymised workbooks**: RD Dias and HaemOnc v1 correctly auto-detected; v1 detects without `m_codes` sheet; v0 fingerprint (A8=`Sample ID`, F12=`Subpanel analysed`) detects correctly |
 
 ---
 
@@ -55,7 +44,7 @@ test "$status" -eq 0
 
 ---
 
-## `test_parser.py` — 39 tests
+## `test_parser.py` — 43 tests
 
 **Where to start depending on your goal:**
 - New to the codebase → `TestParseWorkbook` (integration tests against real workbooks) and the smoke tests
@@ -71,8 +60,9 @@ test "$status" -eq 0
 | `TestExtractNamedCellsMulti` | One row per matching sheet; no matching sheets returns empty |
 | `TestExtractTabular` | RD Dias included sheet; lowercase transform; unique `local_id`; `linking_id` equals `local_id` |
 | `TestExtractTabularConstantFields` | Sheet-level `constant_fields` stamped on rows; multiple keys; no regression when absent |
+| `TestExtractTabularOptionalColumns` | Optional column absent → silently skipped, db_column absent from result; optional column present → extracted normally; required column absent → raises `ValueError`; `percent_to_decimal` transform strips `%` and divides by 100; `to_string` transform casts mixed int/str column to uniform string type |
 | `TestMergeDataframes` | Cross join then left join; no interpret sheet skips join |
-| `TestParseWorkbook` | **Anonymised workbooks**: RD Dias shape/columns/constant fields; HaemOnc shape/somatic allele_origin/variant_category |
+| `TestParseWorkbook` | **Anonymised workbooks**: RD Dias shape/columns/constant fields; HaemOnc shape/somatic `allele_origin`/`variant_category` |
 | `TestParseWorkbookPindel` | Pindel rows concatenated with included; `variant_category` values per source; absent pindel sheet skipped gracefully; top-level constants broadcast to all rows |
 | Smoke tests | Guard that test workbooks are present; pindel sheet precondition; parametrized smoke test for every HaemOnc `.xlsx` in `tests/test_data/workbooks/haemonc/` |
 
@@ -86,16 +76,17 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ---
 
-## `test_transformer.py` — 19 tests
+## `test_transformer.py` — 32 tests
 
 | Class | Tests |
 |-------|-------|
 | `TestApplyNullSentinels` | `.` → NaN; `./.` → NaN; empty sentinel list is no-op |
-| `TestApplyNormalisations` | Replaces mapped values; missing field skipped; empty list no-op |
+| `TestApplyNormalisations` | Replaces mapped values; missing field skipped; empty list no-op; two-pass chaining (e.g. `VUS` → `Uncertain_significance` → `Uncertain significance`) |
 | `TestMakeAcgsCriteriaNull` | `"NA"` → NaN; nulls evidence when criterion null; preserves evidence when criterion set; missing columns no error |
 | `TestBuildAcgsComment` | Default strength — no suffix; non-default strength — appended; null criterion excluded; multiple criteria comma-separated; empty df |
 | `TestApplyDerivedFields` | ACGS comment dispatched; unknown type logged and skipped |
-| `TestTransform` | Full pipeline: null sentinels → normalisations → ACGS null → derived fields |
+| `TestTransform` | Full pipeline: null sentinels → normalisations → coerce dates → ACGS null → derived fields |
+| `TestCoerceDateLastEvaluated` | Slash separator (`/`) takes last date; same-month boundary; year-end boundary; hyphen separator (`-`) takes last date; plain string date parsed (DD/MM/YYYY); existing datetime unchanged; NaN unchanged; column absent is no-op; leading backtick stripped; leading apostrophe stripped; all-NaT column returns datetime dtype (not object) |
 
 ---
 
@@ -111,7 +102,7 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ---
 
-## `test_main.py` — 22 tests
+## `test_main.py` — 27 tests
 
 UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py` tests run at full speed with no fixture patching needed.
 
@@ -153,6 +144,11 @@ UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py
 | `test_schema_mismatch_writes_csv` | `SchemaMismatchError` → CSV written, `mark_workbook_failed` called |
 | `test_migrate_flag_calls_migrate_schema` | `--migrate` → `migrate_schema` called before insert |
 | `test_validation_error_marks_workbook_failed` | Validation failure with live engine → `mark_workbook_failed` called |
+| `test_already_parsed_workbooks_are_skipped` | Workbook in `already_parsed` set not passed to `add_workbook` |
+| `test_duplicate_in_samples_file_raises` | Same path listed twice in `--samples_file` → `SystemExit` with duplicate basename message |
+| `test_cross_directory_duplicate_basenames_raises` | Two different paths with same basename → `SystemExit` with duplicate basename message |
+| `test_add_workbook_failure_writes_csv_and_continues` | `add_workbook()` raises → error CSV written, `add_variants` not called, returns `False` |
+| `test_mark_workbook_parsed_failure_writes_csv` | `mark_workbook_parsed()` raises → error CSV written, returns `False` |
 
 ---
 
