@@ -4,8 +4,7 @@
 
   "fingerprint": [
     { "sheet": "summary", "cell": "A5", "equals": "Subpanel analysed" },
-    { "sheet": "summary", "cell": "A6", "equals": "M-code" },
-    { "sheet": "m_codes", "exists": true }
+    { "sheet": "summary", "cell": "A6", "equals": "M-code" }
   ],
 
   "sheets": {
@@ -26,7 +25,7 @@
       "extraction_type": "tabular",
       "constant_fields": { "variant_category": "included" },
       "columns": [
-        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "CHROM",                    "db_column": "chromosome",  "transform": "to_string" },
         { "source": "POS",                      "db_column": "start" },
         { "source": "SYMBOL",                   "db_column": "gene_symbol" },
         { "source": "HGVSc",                    "db_column": "hgvsc" },
@@ -53,7 +52,7 @@
       "extraction_type": "tabular",
       "constant_fields": { "variant_category": "pindel" },
       "columns": [
-        { "source": "CHROM",                    "db_column": "chromosome" },
+        { "source": "CHROM",                    "db_column": "chromosome",  "transform": "to_string" },
         { "source": "POS",                      "db_column": "start" },
         { "source": "SYMBOL",                   "db_column": "gene_symbol" },
         { "source": "HGVSc",                    "db_column": "hgvsc" },
@@ -91,6 +90,14 @@
 
   "normalisations": [
     { "field": "oncogenicity_classification", "replace": {
+        "VUS":              "Uncertain_significance",
+        "Likely benign":   "Likely_benign",
+        "Likely Benign":   "Likely_benign",
+        "Likely Pathogenic": "Likely_oncogenic",
+        "Likely pathogenic": "Likely_oncogenic",
+        "Pathogenic":      "Oncogenic"
+    }},
+    { "field": "oncogenicity_classification", "replace": {
         "Likely_oncogenic":       "Likely oncogenic",
         "Uncertain_significance": "Uncertain significance",
         "Likely_benign":          "Likely benign"
@@ -101,9 +108,10 @@
     "field": [
       { "field": "oncogenicity_classification", "type": "in_list",
         "values": [
-          "Uncertain_significance",
-          "Likely_benign", "Benign",
-          "Oncogenic", "Likely_oncogenic"
+          "Uncertain_significance", "VUS",
+          "Likely_benign", "Benign", "Likely benign", "Likely Benign",
+          "Oncogenic", "Pathogenic",
+          "Likely_oncogenic", "Likely Pathogenic", "Likely pathogenic"
         ]}
     ]
   }

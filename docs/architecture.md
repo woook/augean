@@ -40,8 +40,8 @@ Excel file
     │
     ▼
 5. Transform     transformer.transform()
-    │               Applies null sentinels, string normalisations, ACGS criteria
-    │               nulling, and derived field generation.
+    │               Applies null sentinels, string normalisations, date coercion,
+    │               ACGS criteria nulling, and derived field generation.
     │
     ▼
 6. Insert        db.add_variants()
@@ -61,7 +61,7 @@ The orchestration lives in `augean/main.py` → `_process_workbook()`.
 | `augean/loader.py` | Open `.xlsx` files with openpyxl; call `config.get_config_for_workbook()` |
 | `augean/parser.py` | Extract sheets into DataFrames; merge summary + included + interpret |
 | `augean/validator.py` | Structural, field, cross-sheet, and ACGS validation checks |
-| `augean/transformer.py` | Null sentinel replacement, normalisations, ACGS comment building |
+| `augean/transformer.py` | Null sentinel replacement, normalisations, date coercion, ACGS comment building |
 | `augean/db.py` | SQLAlchemy operations: workbook tracking, variant insert, schema migrate |
 | `augean/main.py` | CLI argument parsing, pipeline orchestration, error CSV output |
 | `augean/errors.py` | Custom exception types |
@@ -130,28 +130,56 @@ There are four validation stages, all accumulated into a single error list:
 
 ---
 
+## Data quality handling in the transformer
+
+Before ACGS processing, `transformer.transform()` calls `coerce_date_last_evaluated()` to normalise the `date_last_evaluated` column. This handles several common manual-editing errors found in older workbooks where sheet locking was not enforced:
+
+- **Multiple dates separated by ` / ` or ` - `** — takes the last (most recent) date and logs a `WARNING`
+- **Leading backtick or apostrophe** — Excel text-prefix artefact surfaced by openpyxl; stripped before parsing
+- **Plain string dates** (e.g. `13/01/2026`) — parsed to datetime using `dayfirst=True`
+- **All-NaT columns** — always returns `datetime64` dtype, not `object`, to prevent silent type mismatch on insert
+
+---
+
+## Skip-already-parsed and batch validation
+
+`augean/main.py` performs two safeguards before the processing loop:
+
+1. **Duplicate basename check** — if any two workbooks in the batch share the same filename (even from different directories), a `SystemExit` is raised immediately. The database keys on `workbook_name` (basename), so duplicate filenames are always ambiguous.
+
+2. **Skip-already-parsed** — `db.get_parsed_workbooks()` is called once at startup to fetch all workbook names where `parse_status = TRUE`. Any matching workbook is skipped with a log message. Workbooks processed successfully during the run are added to the skip-set immediately, preventing within-run duplicates when the same path appears twice in `--samples_file`.
+
+Workbooks where `parse_status = FALSE` (previous failure) are **not** skipped and are always retried.
+
+---
+
 ## Database interaction
 
 Two tables are written per run:
 
-- **`<schema>.<workbooks_table>`** (default `testdirectory.staging_workbooks`) — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message).
+- **`<schema>.<workbooks_table>`** (default `testdirectory.staging_workbooks`; overridable via `--db_workbooks_table` or `deployment.json`) — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message). `add_workbook` uses `ON CONFLICT (workbook_name) DO NOTHING`, so re-running a previously-failed workbook updates the existing row via `mark_workbook_parsed` or `mark_workbook_failed` rather than inserting a duplicate. Both calls are wrapped in try/except so a DB tracking failure does not abort the batch.
 - **`<schema>.<table>`** (default `testdirectory.inca`) — one row per variant, containing all extracted fields.
 
 Before inserting, `db.add_variants()` compares the DataFrame columns against the live table columns. If any DataFrame column is absent from the table, a `SchemaMismatchError` is raised with the `ALTER TABLE` SQL needed to resolve it. The `--migrate` flag applies these automatically.
 
 ---
 
-## Format differences: RD Dias vs HaemOnc
+## Format differences: RD Dias, HaemOnc v1, and HaemOnc v0
 
-| Aspect | RD Dias (`rd_dias_v1`) | HaemOnc (`haemonc_uranus_v1`) |
-|--------|----------------------|------------------------------|
-| Allele origin | germline | somatic |
-| Summary extraction | `named_cells` (fixed addresses) | `label_scan` (label/value pairs) |
-| Classification type | `germline_classification` | `oncogenicity_classification` |
-| ACGS criteria | Yes (interpret sheets) | No |
-| Ref genome | `sentinel_scan` in summary | Label scan, no default |
-| Clinical indication | Split into condition name + R-code | Not applicable |
-| Null sentinels | None | `.` and `./.` (VCF-style) |
+| Aspect | RD Dias (`rd_dias_v1`) | HaemOnc v1 (`haemonc_uranus_v1`) | HaemOnc v0 (`haemonc_uranus_v0`) |
+|--------|----------------------|----------------------------------|----------------------------------|
+| Generator version | N/A | eggd_generate_variant_workbook v2.11.0+ | before v2.11.0 (pre-May 2025) |
+| Allele origin | germline | somatic | somatic |
+| Summary extraction | `named_cells` (fixed addresses) | `label_scan` (labels in col A, values in col B) | `named_cells` (labels split between col A row 8 and col F rows 10–12) |
+| Classification type | `germline_classification` | `oncogenicity_classification` | `oncogenicity_classification` |
+| ACGS criteria | Yes (interpret sheets) | No | No |
+| M-code | No | Optional (present if `--m_codes` passed to generator) | No |
+| Excluded sheet | No | No | Yes (ignored — filtered-out variants) |
+| AF format | N/A | Decimal (e.g. `0.078`) | Percentage string (e.g. `7.8%`) — converted by `percent_to_decimal` transform |
+| Optional columns | No | No | Yes — columns absent in older pipeline versions are marked `optional: true` |
+| Ref genome | `sentinel_scan` in summary | Label scan, no default | `sentinel_scan` in summary |
+| Clinical indication | Split into condition name + R-code | Not applicable | Not applicable |
+| Null sentinels | None | `.` and `./.` (VCF-style) | `.` and `./.` (VCF-style) |
 
 ---
 
@@ -159,11 +187,14 @@ Before inserting, `db.add_variants()` compares the DataFrame columns against the
 
 If you are new to the codebase, read these files in this order:
 
-1. `configs/haemonc_uranus_v1.json` — understand the config structure concretely
-2. `augean/parser.py` — the extraction logic
-3. `augean/main.py` — the pipeline orchestration
-4. `augean/validator.py` — validation checks
-5. `augean/transformer.py` — post-parse transformations
-6. `augean/db.py` — database operations
+1. `configs/haemonc_uranus_v1.json` — understand the current HaemOnc config structure concretely
+2. `configs/haemonc_uranus_v0.json` — see how optional columns, percent_to_decimal, and named_cells summary extraction differ
+3. `augean/parser.py` — the extraction logic
+4. `augean/main.py` — the pipeline orchestration
+5. `augean/validator.py` — validation checks
+6. `augean/transformer.py` — post-parse transformations
+7. `augean/db.py` — database operations
 
 The test files are also a useful reference — each module has a corresponding test file that shows inputs and expected outputs for each function.
+
+`tests/test_acceptance.py` and `tests/test_data/golden/` document the expected end-to-end output for the committed anonymised workbooks. Run `python scripts/regenerate_golden.py` to update the golden files when pipeline output changes intentionally.

@@ -1,35 +1,41 @@
 # Test Suite Reference
 
-140 tests across 7 modules (139 passing, 1 skipped when only one RD Dias workbook is present). All tests use pytest.
+163 unit/integration tests across 7 modules (162 passing, 1 skipped), plus acceptance tests requiring a live database. All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
 
 ## Running tests
 
 ```bash
-# Full suite (sequential)
+# Unit and integration suite (parallel, ~30s)
 pytest
 
-# Parallel by file group (~34s wall clock)
-pytest tests/test_config.py tests/test_db.py tests/test_loader.py \
-       tests/test_transformer.py tests/test_validator.py & p1=$!
-pytest tests/test_parser.py & p2=$!
-pytest tests/test_main.py & p3=$!
-status=0
-wait "$p1" || status=$?
-wait "$p2" || status=$?
-wait "$p3" || status=$?
-test "$status" -eq 0
+# Acceptance tests — parser check only (no DB needed)
+pytest tests/test_acceptance.py -m acceptance -k "parser" \
+    --override-ini="addopts="
+
+# Acceptance tests — full (workbook must be inserted into DB first)
+pytest tests/test_acceptance.py -m acceptance \
+    --db_credentials /path/to/creds.json \
+    [--acceptance_schema testdirectory] \
+    --override-ini="addopts="
+
+# Verbose output for documentation
+pytest tests/test_acceptance.py -m acceptance \
+    --db_credentials /path/to/creds.json \
+    --acceptance_schema testdirectory \
+    -v -s --log-cli-level=INFO \
+    --override-ini="addopts=" 2>&1 | tee results.txt
 ```
 
 ---
 
-## `test_config.py` — 20 tests
+## `test_config.py` — 22 tests
 
 | Class | Tests |
 |-------|-------|
-| `TestLoadConfigs` | Loads both configs from dir; validates required keys present; raises `ConfigValidationError` on missing key; handles empty dir |
+| `TestLoadConfigs` | Loads all three configs from dir; validates required keys present; raises `ConfigValidationError` on missing key; handles empty dir |
 | `TestFingerprintEvaluation` | Each fingerprint rule type — `equals`, `matches_pattern`, `sheet_exists`, `sheet_pattern`, `has_columns` — pass and fail variants; all rules must match |
 | `TestGetConfigForWorkbook` | Raises `WorkbookFormatUnknownError` on unknown format; raises `AmbiguousWorkbookFormatError` on ambiguous match |
-| `TestRealWorkbookFingerprint` | **Anonymised workbooks**: RD Dias and HaemOnc correctly auto-detected |
+| `TestRealWorkbookFingerprint` | **Anonymised workbooks**: RD Dias and HaemOnc v1 correctly auto-detected; v1 detects without `m_codes` sheet; v0 fingerprint (A8=`Sample ID`, F12=`Subpanel analysed`) detects correctly |
 
 ---
 
@@ -55,7 +61,7 @@ test "$status" -eq 0
 
 ---
 
-## `test_parser.py` — 39 tests
+## `test_parser.py` — 43 tests
 
 **Where to start depending on your goal:**
 - New to the codebase → `TestParseWorkbook` (integration tests against real workbooks) and the smoke tests
@@ -71,8 +77,9 @@ test "$status" -eq 0
 | `TestExtractNamedCellsMulti` | One row per matching sheet; no matching sheets returns empty |
 | `TestExtractTabular` | RD Dias included sheet; lowercase transform; unique `local_id`; `linking_id` equals `local_id` |
 | `TestExtractTabularConstantFields` | Sheet-level `constant_fields` stamped on rows; multiple keys; no regression when absent |
+| `TestExtractTabularOptionalColumns` | Optional column absent → silently skipped, db_column absent from result; optional column present → extracted normally; required column absent → raises `ValueError`; `percent_to_decimal` transform strips `%` and divides by 100; `to_string` transform casts mixed int/str column to uniform string type |
 | `TestMergeDataframes` | Cross join then left join; no interpret sheet skips join |
-| `TestParseWorkbook` | **Anonymised workbooks**: RD Dias shape/columns/constant fields; HaemOnc shape/somatic allele_origin/variant_category |
+| `TestParseWorkbook` | **Anonymised workbooks**: RD Dias shape/columns/constant fields; HaemOnc shape/somatic `allele_origin`/`variant_category` |
 | `TestParseWorkbookPindel` | Pindel rows concatenated with included; `variant_category` values per source; absent pindel sheet skipped gracefully; top-level constants broadcast to all rows |
 | Smoke tests | Guard that test workbooks are present; pindel sheet precondition; parametrized smoke test for every HaemOnc `.xlsx` in `tests/test_data/workbooks/haemonc/` |
 
@@ -86,16 +93,17 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ---
 
-## `test_transformer.py` — 19 tests
+## `test_transformer.py` — 32 tests
 
 | Class | Tests |
 |-------|-------|
 | `TestApplyNullSentinels` | `.` → NaN; `./.` → NaN; empty sentinel list is no-op |
-| `TestApplyNormalisations` | Replaces mapped values; missing field skipped; empty list no-op |
+| `TestApplyNormalisations` | Replaces mapped values; missing field skipped; empty list no-op; two-pass chaining (e.g. `VUS` → `Uncertain_significance` → `Uncertain significance`) |
 | `TestMakeAcgsCriteriaNull` | `"NA"` → NaN; nulls evidence when criterion null; preserves evidence when criterion set; missing columns no error |
 | `TestBuildAcgsComment` | Default strength — no suffix; non-default strength — appended; null criterion excluded; multiple criteria comma-separated; empty df |
 | `TestApplyDerivedFields` | ACGS comment dispatched; unknown type logged and skipped |
-| `TestTransform` | Full pipeline: null sentinels → normalisations → ACGS null → derived fields |
+| `TestTransform` | Full pipeline: null sentinels → normalisations → coerce dates → ACGS null → derived fields |
+| `TestCoerceDateLastEvaluated` | Slash separator (`/`) takes last date; same-month boundary; year-end boundary; hyphen separator (`-`) takes last date; plain string date parsed (DD/MM/YYYY); existing datetime unchanged; NaN unchanged; column absent is no-op; leading backtick stripped; leading apostrophe stripped; all-NaT column returns datetime dtype (not object) |
 
 ---
 
@@ -111,7 +119,7 @@ Both `TestExtractNamedCells` and `TestExtractLabelScan` include a dedicated test
 
 ---
 
-## `test_main.py` — 22 tests
+## `test_main.py` — 27 tests
 
 UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py` tests run at full speed with no fixture patching needed.
 
@@ -153,6 +161,39 @@ UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py
 | `test_schema_mismatch_writes_csv` | `SchemaMismatchError` → CSV written, `mark_workbook_failed` called |
 | `test_migrate_flag_calls_migrate_schema` | `--migrate` → `migrate_schema` called before insert |
 | `test_validation_error_marks_workbook_failed` | Validation failure with live engine → `mark_workbook_failed` called |
+| `test_already_parsed_workbooks_are_skipped` | Workbook in `already_parsed` set not passed to `add_workbook` |
+| `test_duplicate_in_samples_file_raises` | Same path listed twice in `--samples_file` → `SystemExit` with duplicate basename message |
+| `test_cross_directory_duplicate_basenames_raises` | Two different paths with same basename → `SystemExit` with duplicate basename message |
+| `test_add_workbook_failure_writes_csv_and_continues` | `add_workbook()` raises → error CSV written, `add_variants` not called, returns `False` |
+| `test_mark_workbook_parsed_failure_writes_csv` | `mark_workbook_parsed()` raises → error CSV written, returns `False` |
+
+---
+
+## `test_acceptance.py` — acceptance tests (excluded from default run)
+
+Two orthogonal checks per workbook using a committed golden CSV snapshot as the shared reference:
+
+| Test | DB needed | What it catches |
+|---|---|---|
+| `test_parser_matches_golden` | No | Parser/transformer regression — pipeline output changed unexpectedly |
+| `test_db_matches_golden` | Yes | DB round-trip bug — insert/retrieve dropped rows, extra rows, or corrupted values |
+
+The golden file is the key: it is independent of both the pipeline and the database, verified by human inspection when first created. When pipeline output is intentionally changed, run `python scripts/regenerate_golden.py`, inspect the diff, and commit it in the same PR.
+
+Acceptance tests are parametrized automatically from the golden files in `tests/test_data/golden/`. Adding a new workbook to acceptance testing:
+
+1. Ensure the workbook is in `tests/test_data/workbooks/haemonc/` (anonymised)
+2. Run `python scripts/regenerate_golden.py` to create its golden file
+3. Inspect the golden file, commit it
+4. The acceptance tests pick it up automatically — no code changes needed
+
+### Comparison approach
+
+All column values are coerced to string before comparison to avoid dtype differences between the pipeline (where ID columns are `str`) and the CSV-loaded golden file (where pandas reads numeric-looking strings as `int64`). Datetime columns are normalised to `YYYY-MM-DD`. NaN/None values are normalised to empty string.
+
+Columns excluded from comparison:
+- `local_id`, `linking_id` — time-based UUIDs generated at parse time, different on every run
+- DB-only columns not written by augean (`id`, `east_panels_id`, `submission_id`, etc.)
 
 ---
 
@@ -161,16 +202,19 @@ UUID generation uses `uuid.uuid1().hex` directly with no sleep, so `test_main.py
 Anonymised workbooks (no patient data) are committed to the repo and used by CI:
 
 ```text
-tests/test_data/workbooks/
-  rd_dias/
-    148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)
-  haemonc/
-    999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx  ← committed (anonymised)
-    <additional workbooks for smoke testing — gitignored>
+tests/test_data/
+  workbooks/
+    rd_dias/
+      148888811-45664R057-66NGWTY2-9116-M-111118.xlsx   ← committed (anonymised)
+    haemonc/
+      999999999-99999K9999-99NGSH999-9999-M-99999999.xlsx  ← committed (anonymised)
+      <additional workbooks for smoke testing — gitignored>
+  golden/
+    999999999-99999K9999-99NGSH999-9999-M-99999999.csv   ← committed golden snapshot
 ```
 
-Real patient workbooks placed in these directories are gitignored by pattern and will never be committed. The gitignore explicitly allowlists only the two anonymised filenames above.
+Real patient workbooks placed in `workbooks/` are gitignored and will never be committed.
 
 Tests that depend on workbook fixtures skip gracefully if the file is absent, so the suite remains runnable in any environment.
 
-Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed.
+Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed. To also include them in acceptance testing, run `scripts/regenerate_golden.py` afterwards.

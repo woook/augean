@@ -491,7 +491,103 @@ class TestExtractTabularConstantFields:
         assert (df["source_caller"] == "gatk").all()
 
 
-class TestParseWorkbookPindel:
+class TestExtractTabularOptionalColumns:
+    """Optional columns in tabular extraction."""
+
+    def _make_workbook_and_path(self, tmp_path, columns: dict):
+        """Write a minimal xlsx with given columns and return (workbook, path)."""
+        import openpyxl
+        df = pd.DataFrame(columns)
+        path = tmp_path / "test.xlsx"
+        df.to_excel(str(path), sheet_name="included", index=False)
+        wb = openpyxl.load_workbook(str(path))
+        return wb, path
+
+    def test_optional_column_absent_is_skipped(self, tmp_path):
+        """Optional column not in sheet does not raise; db_column absent from result."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": ["1"], "HGVSc": ["c.100A>T"]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM",  "db_column": "chromosome"},
+                {"source": "HGVSc",  "db_column": "hgvsc"},
+                {"source": "HGVSp",  "db_column": "hgvsp", "optional": True},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert "chromosome" in df.columns
+        assert "hgvsc" in df.columns
+        assert "hgvsp" not in df.columns
+
+    def test_optional_column_present_is_extracted(self, tmp_path):
+        """Optional column present in sheet is extracted normally."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": ["1"], "HGVSc": ["c.100A>T"], "HGVSp": ["p.Arg50Ter"]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM",  "db_column": "chromosome"},
+                {"source": "HGVSc",  "db_column": "hgvsc"},
+                {"source": "HGVSp",  "db_column": "hgvsp", "optional": True},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert "hgvsp" in df.columns
+        assert df["hgvsp"].iloc[0] == "p.Arg50Ter"
+
+    def test_required_column_absent_raises(self, tmp_path):
+        """Required column (no optional flag) absent from sheet raises ValueError."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": ["1"]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM",  "db_column": "chromosome"},
+                {"source": "HGVSc",  "db_column": "hgvsc"},  # required, absent
+            ],
+            "generated_columns": [],
+        }
+        with pytest.raises(ValueError):
+            extract_tabular(wb, "included", sheet_config, path)
+
+    def test_percent_to_decimal_transform(self, tmp_path):
+        """percent_to_decimal strips % and divides by 100."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": ["1", "2", "3"], "AF": ["7.8%", "50.0%", "100.0%"]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM", "db_column": "chromosome"},
+                {"source": "AF",    "db_column": "vaf", "transform": "percent_to_decimal"},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert list(df["vaf"]) == pytest.approx([0.078, 0.500, 1.000])
+
+    def test_to_string_transform(self, tmp_path):
+        """to_string casts mixed int/str column values to str."""
+        wb, path = self._make_workbook_and_path(
+            tmp_path, {"CHROM": [1, 2, "X"], "POS": [100, 200, 300]}
+        )
+        sheet_config = {
+            "extraction_type": "tabular",
+            "columns": [
+                {"source": "CHROM", "db_column": "chromosome", "transform": "to_string"},
+                {"source": "POS",   "db_column": "start"},
+            ],
+            "generated_columns": [],
+        }
+        df = extract_tabular(wb, "included", sheet_config, path)
+        assert list(df["chromosome"]) == ["1", "2", "X"]
+        assert all(isinstance(v, str) for v in df["chromosome"])
     """parse_workbook pindel concatenation behaviour."""
 
     def _mock_wb(self, sheetnames):

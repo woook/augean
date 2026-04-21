@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov", "freezegun"]
+dev = ["pytest>=8", "pytest-cov", "pytest-xdist", "freezegun"]
 
 [project.scripts]
 augean = "augean.main:main"
@@ -24,3 +24,9 @@ augean = "augean.main:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["augean*"]
+
+[tool.pytest.ini_options]
+addopts = "-n auto -m 'not acceptance'"
+markers = [
+    "acceptance: end-to-end acceptance tests requiring a live database (deselected by default)",
+]

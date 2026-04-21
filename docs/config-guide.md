@@ -131,10 +131,13 @@ Scans `scan_column` for cells whose text matches `label`; reads the value from `
 ```
 
 - `source` — the exact column header in the Excel sheet
+- `optional: true` — if the column is absent from the sheet it is silently skipped; use this for columns that only exist in some pipeline versions
 - `row_count_ref` — optional; limits rows read to the value in a specific cell (avoids reading trailing blank rows)
 - `transform` — optional per-column transform:
   - `"lowercase"` — converts string values to lower case
   - `"boolean_to_yes_no"` — maps `True/False/1/0` to `"yes"/"no"` (for Excel checkbox columns)
+  - `"percent_to_decimal"` — strips a trailing `%` and divides by 100 (e.g. `"7.8%"` → `0.078`); use for AF columns in older workbooks where the generator stored VAF as a percentage string
+  - `"to_string"` — casts the column to string; use for `CHROM` to ensure consistent `TEXT` storage when a batch contains both autosomal (integer) and sex chromosome (`X`/`Y`) variants
 - `generated_columns` — columns added programmatically:
   - `generation: "uuid_time"` — generates a time-based UUID string (`uid_<timestamp>`)
   - `source: "<col>"` — copies an existing column (used for `linking_id = local_id`)
@@ -219,6 +222,11 @@ Values that represent NULL in the source data (common in VCF-derived columns). A
 ```json
 "normalisations": [
   { "field": "oncogenicity_classification", "replace": {
+      "VUS":               "Uncertain_significance",
+      "Likely Pathogenic": "Likely_oncogenic",
+      "Pathogenic":        "Oncogenic"
+  }},
+  { "field": "oncogenicity_classification", "replace": {
       "Likely_oncogenic":       "Likely oncogenic",
       "Uncertain_significance": "Uncertain significance",
       "Likely_benign":          "Likely benign"
@@ -227,6 +235,8 @@ Values that represent NULL in the source data (common in VCF-derived columns). A
 ```
 
 String replacements applied **after** validation. Because validation runs on raw values, the validation `values` list must contain the raw (pre-normalisation) forms.
+
+Multiple normalisation objects for the same field are applied in order — this allows **multi-pass chaining**. In the example above, `VUS` is first mapped to `Uncertain_significance`, then the second pass maps that to `Uncertain significance`. This is the pattern used when workbooks contain free-text aliases that should be normalised to a canonical form before converting to the final display form.
 
 ---
 

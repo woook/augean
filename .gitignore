@@ -8,6 +8,12 @@ build/
 .coverage
 htmlcov/
 .pytest_cache/
+.venv/
+MEMORY.md
+error-output/
+acceptance_results.txt
+# LibreOffice lock files
+.~lock.*
 # Patient data workbooks — do not commit real workbooks
 tests/test_data/workbooks/rd_dias/*.xlsx
 tests/test_data/workbooks/haemonc/*.xlsx

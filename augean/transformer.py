@@ -1,4 +1,5 @@
 """Normalisation and derived-field transformations."""
+import re
 import logging
 
 import numpy as np
@@ -83,10 +84,47 @@ def apply_derived_fields(df: pd.DataFrame, derived_fields: list[dict]) -> pd.Dat
     return df
 
 
+def coerce_date_last_evaluated(df: pd.DataFrame) -> pd.DataFrame:
+    """Normalise date_last_evaluated to a parseable date value.
+
+    Handles cases caused by manual workbook edits:
+    - Leading backtick or apostrophe (Excel text-prefix artefact) — stripped.
+    - Multiple dates separated by ' / ' or ' - ' (e.g. '07/01/2025 / 13/01/2026') —
+      takes the last entry, which is the most recent review date.
+    - A plain date string (e.g. '13/01/2026') — parses it to datetime.
+
+    Rows where the value is already a datetime or NaN are left unchanged.
+    """
+    col = "date_last_evaluated"
+    if col not in df.columns:
+        return df
+
+    def _resolve(val):
+        if pd.isna(val) or isinstance(val, (pd.Timestamp, type(pd.NaT))):
+            return val
+        if hasattr(val, 'date'):  # already a datetime-like
+            return val
+        s = str(val).strip().lstrip("`'")
+        if re.search(r'\s+[/\-]\s+', s):
+            s = re.split(r'\s+[/\-]\s+', s)[-1].strip()
+            log.warning(
+                "date_last_evaluated contained multiple dates; using last: '%s'", s
+            )
+        try:
+            return pd.to_datetime(s, dayfirst=True)
+        except (ValueError, TypeError):
+            log.warning("Could not parse date_last_evaluated value: '%s'", s)
+            return pd.NaT
+
+    df[col] = pd.to_datetime(df[col].apply(_resolve), errors="coerce")
+    return df
+
+
 def transform(df: pd.DataFrame, config: dict) -> pd.DataFrame:
-    """Orchestrate: null sentinels → normalisations → ACGS null → derived fields."""
+    """Orchestrate: null sentinels → normalisations → coerce dates → ACGS null → derived fields."""
     df = apply_null_sentinels(df, config.get("null_sentinels", []))
     df = apply_normalisations(df, config.get("normalisations", []))
+    df = coerce_date_last_evaluated(df)
 
     acgs_config = config.get("validations", {}).get("acgs", {})
     if acgs_config:

@@ -102,14 +102,34 @@ def extract_tabular(
         nrows = workbook[ref["sheet"]][ref["cell"]].value
 
     columns = sheet_config.get("columns", [])
-    source_cols = [c["source"] for c in columns]
+
+    # Separate required and optional columns; only request columns that exist
+    # in the sheet so that optional ones don't raise a ValueError.
+    sheet_obj = workbook[sheet_name]
+    sheet_headers = {
+        cell.value
+        for cell in next(sheet_obj.iter_rows(min_row=1, max_row=1))
+        if cell.value is not None
+    }
+    required_cols = [c for c in columns if not c.get("optional")]
+    optional_cols = [c for c in columns if c.get("optional")]
+    present_optional = [c for c in optional_cols if c["source"] in sheet_headers]
+    absent_optional = [c for c in optional_cols if c["source"] not in sheet_headers]
+    if absent_optional:
+        log.debug(
+            "Sheet '%s': optional column(s) not present and will be skipped: %s",
+            sheet_name,
+            [c['source'] for c in absent_optional],
+        )
+
+    source_cols = [c["source"] for c in required_cols + present_optional]
 
     df = pd.read_excel(str(filename), sheet_name=sheet_name, usecols=source_cols, nrows=nrows)
 
-    rename_map = {c["source"]: c["db_column"] for c in columns}
+    rename_map = {c["source"]: c["db_column"] for c in required_cols + present_optional}
     df.rename(columns=rename_map, inplace=True)
 
-    for col_config in columns:
+    for col_config in required_cols + present_optional:
         db_col = col_config["db_column"]
         if db_col not in df.columns:
             continue
@@ -118,6 +138,12 @@ def extract_tabular(
             df[db_col] = df[db_col].str.lower()
         elif transform == "boolean_to_yes_no":
             df[db_col] = df[db_col].map({True: "yes", False: "no"})
+        elif transform == "percent_to_decimal":
+            df[db_col] = (
+                df[db_col].astype(str).str.rstrip("%").astype(float) / 100
+            )
+        elif transform == "to_string":
+            df[db_col] = df[db_col].astype(str)
 
     pending_copies: list[tuple[str, str]] = []
     for gen_col in sheet_config.get("generated_columns", []):
