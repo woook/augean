@@ -21,9 +21,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from augean import config as config_module, loader, parser, transformer  # noqa: E402
 
-CONFIGS_DIR = Path("configs")
-WORKBOOKS_DIR = Path("tests/test_data/workbooks/haemonc")
-GOLDEN_DIR = Path("tests/test_data/golden")
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+CONFIGS_DIR = _REPO_ROOT / "configs"
+WORKBOOKS_DIR = _REPO_ROOT / "tests" / "test_data" / "workbooks" / "haemonc"
+GOLDEN_DIR = _REPO_ROOT / "tests" / "test_data" / "golden"
 GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
 
 # Columns generated at parse time — different on every run, excluded from golden

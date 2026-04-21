@@ -104,7 +104,7 @@ def _load_golden(wb_path: Path) -> pd.DataFrame:
     golden_path = GOLDEN_DIR / f"{wb_path.stem}.csv"
     if not golden_path.exists():
         pytest.skip(f"No golden file at {golden_path} — run scripts/regenerate_golden.py")
-    return pd.read_csv(golden_path)
+    return pd.read_csv(golden_path, keep_default_na=False)
 
 
 def _query_db(engine, schema: str, specimen_id: str, batch_id: str) -> pd.DataFrame:

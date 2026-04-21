@@ -151,8 +151,6 @@ def make_mock_workbook(sheetnames: list[str], cells: dict = None) -> MagicMock:
             cell.value = sheet_cells.get(addr)
             return cell
 
-        sheet.__getitem__ = lambda s, key: get_cell(key)
-
         # Simulate iter_rows for header detection
         def iter_rows(min_row=1, max_row=1, **kwargs):
             if min_row == 1 and max_row == 1:
