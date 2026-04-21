@@ -1,5 +1,6 @@
 """Shared test fixtures."""
 import json
+import re
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -39,7 +40,13 @@ def acceptance_db_credentials(request):
 
 @pytest.fixture(scope="session")
 def acceptance_schema(request):
-    return request.config.getoption("--acceptance_schema")
+    schema = request.config.getoption("--acceptance_schema")
+    if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", schema):
+        pytest.fail(
+            f"--acceptance_schema '{schema}' is not a valid PostgreSQL identifier. "
+            "Use only letters, digits, and underscores, starting with a letter or underscore."
+        )
+    return schema
 
 
 @pytest.fixture(scope="session")

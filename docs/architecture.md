@@ -157,7 +157,7 @@ Workbooks where `parse_status = FALSE` (previous failure) are **not** skipped an
 
 Two tables are written per run:
 
-- **`<schema>.<workbooks_table>`** (default `testdirectory.inca_workbooks`) — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message). `add_workbook` uses `ON CONFLICT (workbook_name) DO NOTHING`, so re-running a previously-failed workbook updates the existing row via `mark_workbook_parsed` or `mark_workbook_failed` rather than inserting a duplicate. Both calls are wrapped in try/except so a DB tracking failure does not abort the batch.
+- **`<schema>.<workbooks_table>`** (default `testdirectory.staging_workbooks`; overridable via `--db_workbooks_table` or `deployment.json`) — one row per workbook recording filename, format, date, and parse status (`TRUE`/`FALSE` + error message). `add_workbook` uses `ON CONFLICT (workbook_name) DO NOTHING`, so re-running a previously-failed workbook updates the existing row via `mark_workbook_parsed` or `mark_workbook_failed` rather than inserting a duplicate. Both calls are wrapped in try/except so a DB tracking failure does not abort the batch.
 - **`<schema>.<table>`** (default `testdirectory.inca`) — one row per variant, containing all extracted fields.
 
 Before inserting, `db.add_variants()` compares the DataFrame columns against the live table columns. If any DataFrame column is absent from the table, a `SchemaMismatchError` is raised with the `ALTER TABLE` SQL needed to resolve it. The `--migrate` flag applies these automatically.

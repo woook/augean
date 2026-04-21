@@ -59,14 +59,19 @@ def main() -> None:
         sys.exit(1)
 
     print(f"Regenerating {len(workbooks)} golden file(s)...")
+    failures = []
     for wb_path in workbooks:
         try:
             regenerate(wb_path, configs)
         except Exception as exc:
+            failures.append(wb_path.name)
             print(f"  FAILED {wb_path.name}: {exc}")
 
     print("\nDone. Review the diff before committing:")
     print("  git diff tests/test_data/golden/")
+    if failures:
+        print(f"\n{len(failures)} workbook(s) failed: {failures}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

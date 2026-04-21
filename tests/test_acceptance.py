@@ -132,13 +132,20 @@ def _acceptance_params():
     for golden in sorted(GOLDEN_DIR.glob("*.csv")):
         wb_path = WORKBOOKS_DIR / f"{golden.stem}.xlsx"
         if not wb_path.exists():
-            continue
+            raise FileNotFoundError(
+                f"Golden file '{golden.name}' has no matching workbook at '{wb_path}'. "
+                "Either add the workbook or remove the orphaned golden file."
+            )
         # Extract specimen_id and batch_id from filename
         # Pattern: [instrument]-[specimen]-[batch]-[testcode]-[sex]-[probeset]
         parts = golden.stem.split("-", 5)
-        if len(parts) >= 3:
-            specimen_id, batch_id = parts[1], parts[2]
-            params.append(pytest.param(wb_path, specimen_id, batch_id, id=golden.stem))
+        if len(parts) < 3:
+            raise ValueError(
+                f"Golden file '{golden.name}' does not follow the expected "
+                "[instrument]-[specimen]-[batch]-... naming pattern."
+            )
+        specimen_id, batch_id = parts[1], parts[2]
+        params.append(pytest.param(wb_path, specimen_id, batch_id, id=golden.stem))
     return params
 
 
@@ -166,6 +173,13 @@ class TestWorkbookAcceptance:
         pipeline_df = _pipeline_df(wb_path, configs)
 
         compare_cols = [c for c in golden_df.columns if c not in _EXCLUDE]
+        pipeline_cols = [c for c in pipeline_df.columns if c not in _EXCLUDE]
+        assert set(pipeline_cols) == set(compare_cols), (
+            f"Column mismatch between pipeline and golden file for {wb_path.name}.\n"
+            f"  In pipeline only: {sorted(set(pipeline_cols) - set(compare_cols))}\n"
+            f"  In golden only:   {sorted(set(compare_cols) - set(pipeline_cols))}\n"
+            "Run scripts/regenerate_golden.py if this change is intentional."
+        )
 
         pd.testing.assert_frame_equal(
             _normalise(pipeline_df, compare_cols),
