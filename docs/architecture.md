@@ -190,10 +190,10 @@ If you are new to the codebase, read these files in this order:
 1. `configs/haemonc_uranus_v1.json` — understand the current HaemOnc config structure concretely
 2. `configs/haemonc_uranus_v0.json` — see how optional columns, percent_to_decimal, and named_cells summary extraction differ
 3. `augean/parser.py` — the extraction logic
-3. `augean/main.py` — the pipeline orchestration
-4. `augean/validator.py` — validation checks
-5. `augean/transformer.py` — post-parse transformations
-6. `augean/db.py` — database operations
+4. `augean/main.py` — the pipeline orchestration
+5. `augean/validator.py` — validation checks
+6. `augean/transformer.py` — post-parse transformations
+7. `augean/db.py` — database operations
 
 The test files are also a useful reference — each module has a corresponding test file that shows inputs and expected outputs for each function.
 

@@ -127,24 +127,18 @@ def _query_db(engine, schema: str, specimen_id: str, batch_id: str) -> pd.DataFr
 # ---------------------------------------------------------------------------
 
 def _acceptance_params():
-    """Return (wb_path, specimen_id, batch_id) for each golden-file workbook."""
+    """Return (wb_path, specimen_id, batch_id) for each golden-file workbook.
+
+    Never raises — invalid entries are included with sentinel None values so
+    that errors surface at test execution time, not at collection time. This
+    prevents a stale golden file from breaking the default pytest run.
+    """
     params = []
     for golden in sorted(GOLDEN_DIR.glob("*.csv")):
         wb_path = WORKBOOKS_DIR / f"{golden.stem}.xlsx"
-        if not wb_path.exists():
-            raise FileNotFoundError(
-                f"Golden file '{golden.name}' has no matching workbook at '{wb_path}'. "
-                "Either add the workbook or remove the orphaned golden file."
-            )
-        # Extract specimen_id and batch_id from filename
-        # Pattern: [instrument]-[specimen]-[batch]-[testcode]-[sex]-[probeset]
         parts = golden.stem.split("-", 5)
-        if len(parts) < 3:
-            raise ValueError(
-                f"Golden file '{golden.name}' does not follow the expected "
-                "[instrument]-[specimen]-[batch]-... naming pattern."
-            )
-        specimen_id, batch_id = parts[1], parts[2]
+        specimen_id = parts[1] if len(parts) >= 3 else None
+        batch_id = parts[2] if len(parts) >= 3 else None
         params.append(pytest.param(wb_path, specimen_id, batch_id, id=golden.stem))
     return params
 
@@ -169,6 +163,16 @@ class TestWorkbookAcceptance:
         Fails if parsing, transformation, or normalisation produces different
         output from when the golden file was last regenerated and verified.
         """
+        if not wb_path.exists():
+            pytest.fail(
+                f"Golden file has no matching workbook at '{wb_path}'. "
+                "Either add the workbook or remove the orphaned golden file."
+            )
+        if specimen_id is None or batch_id is None:
+            pytest.fail(
+                f"Golden file '{wb_path.stem}.csv' does not follow the expected "
+                "[instrument]-[specimen]-[batch]-... naming pattern."
+            )
         golden_df = _load_golden(wb_path)
         pipeline_df = _pipeline_df(wb_path, configs)
 
@@ -205,6 +209,16 @@ class TestWorkbookAcceptance:
             augean --deployment deployment.json --db_credentials <creds> \\
                    --workbooks_path tests/test_data/workbooks/haemonc/
         """
+        if not wb_path.exists():
+            pytest.fail(
+                f"Golden file has no matching workbook at '{wb_path}'. "
+                "Either add the workbook or remove the orphaned golden file."
+            )
+        if specimen_id is None or batch_id is None:
+            pytest.fail(
+                f"Golden file '{wb_path.stem}.csv' does not follow the expected "
+                "[instrument]-[specimen]-[batch]-... naming pattern."
+            )
         golden_df = _load_golden(wb_path)
         db_df = _query_db(acceptance_engine, acceptance_schema, specimen_id, batch_id)
 
