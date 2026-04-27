@@ -639,8 +639,14 @@ def test_haemonc_v1_mnv_column_extracted(haemonc_workbook, haemonc_path, haemonc
     """MNV column is extracted from both included and pindel sheets in haemonc_uranus_v1."""
     df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
     assert "mnv" in df.columns
-    assert "mnv" in df[df["variant_category"] == "included"].columns
-    assert "mnv" in df[df["variant_category"] == "pindel"].columns
+    included_df = extract_tabular(
+        haemonc_workbook, "included", haemonc_config["sheets"]["included"], haemonc_path
+    )
+    pindel_df = extract_tabular(
+        haemonc_workbook, "pindel", haemonc_config["sheets"]["pindel"], haemonc_path
+    )
+    assert "mnv" in included_df.columns
+    assert "mnv" in pindel_df.columns
 
 
 def test_haemonc_smoke_pindel_sheet_present():
