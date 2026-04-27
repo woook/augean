@@ -243,16 +243,18 @@ Unit and integration tests run in parallel automatically via `pytest-xdist` (`-n
 
 ### Test structure
 
-| Module | Tests | What it covers |
-|---|---|---|
-| `test_config.py` | 22 | Config loading, fingerprint rule types, format auto-detection against real workbooks, v0/v1 fingerprint detection |
-| `test_db.py` | 14 | SQLAlchemy insert/status/migrate operations |
-| `test_loader.py` | 6 | Workbook opening, format identification |
-| `test_parser.py` | 43 | All extraction types, optional columns, transform types (percent_to_decimal, to_string), pindel sheet extraction, merge logic, real-workbook integration |
-| `test_transformer.py` | 32 | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |
-| `test_validator.py` | 20 | Structural, field, cross-sheet, and ACGS validators |
-| `test_main.py` | 27 | CLI pipeline: dry run, deployment config, all error paths, DB write path, duplicate-submission guard, skip-already-parsed, duplicate basename rejection |
-| `test_acceptance.py` | 2 | **Acceptance** (excluded from default run — see below) |
+| Module | Tests | Coverage | What it covers |
+|---|---|---|---|
+| `test_config.py` | 22 | 97% | Config loading, fingerprint rule types, format auto-detection against real workbooks, v0/v1 fingerprint detection |
+| `test_db.py` | 14 | 97% | SQLAlchemy insert/status/migrate operations |
+| `test_loader.py` | 6 | 100% | Workbook opening, format identification |
+| `test_parser.py` | 44 | 94% | All extraction types, optional columns, transform types (percent_to_decimal, to_string), pindel sheet extraction, merge logic, real-workbook integration |
+| `test_transformer.py` | 32 | 94% | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |
+| `test_validator.py` | 20 | 99% | Structural, field, cross-sheet, and ACGS validators |
+| `test_main.py` | 27 | 94% | CLI pipeline: dry run, deployment config, all error paths, DB write path, duplicate-submission guard, skip-already-parsed, duplicate basename rejection |
+| `test_acceptance.py` | 2 | — | **Acceptance** (excluded from default run — see below) |
+
+**Overall line coverage: 96%** (690 statements, 31 missed).
 
 Most tests use mock workbooks built in-memory. Integration tests run against anonymised workbooks committed to `tests/test_data/workbooks/`. Real patient workbooks in that directory are gitignored.
 
