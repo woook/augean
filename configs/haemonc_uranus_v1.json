@@ -40,7 +40,8 @@
         { "source": "Latest Classification",    "db_column": "latest_classification" },
         { "source": "Total Classifications",    "db_column": "total_classifications" },
         { "source": "Reported",                 "db_column": "reported" },
-        { "source": "Interpreted",              "db_column": "interpreted" }
+        { "source": "Interpreted",              "db_column": "interpreted" },
+        { "source": "MNV",                       "db_column": "mnv" }
       ],
       "generated_columns": [
         { "db_column": "local_id",   "generation": "uuid_time" },
@@ -67,7 +68,8 @@
         { "source": "Prev Count",               "db_column": "prev_count" },
         { "source": "Comment",                  "db_column": "classification_comment" },
         { "source": "Reported",                 "db_column": "reported" },
-        { "source": "Interpreted",              "db_column": "interpreted" }
+        { "source": "Interpreted",              "db_column": "interpreted" },
+        { "source": "MNV",                       "db_column": "mnv" }
       ],
       "generated_columns": [
         { "db_column": "local_id",   "generation": "uuid_time" },

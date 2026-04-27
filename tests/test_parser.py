@@ -635,6 +635,14 @@ class TestExtractTabularOptionalColumns:
 # Smoke test: pindel sheet exists in test workbook
 # ---------------------------------------------------------------------------
 
+def test_haemonc_v1_mnv_column_extracted(haemonc_workbook, haemonc_path, haemonc_config):
+    """MNV column is extracted from both included and pindel sheets in haemonc_uranus_v1."""
+    df = parse_workbook(haemonc_workbook, haemonc_config, haemonc_path)
+    assert "mnv" in df.columns
+    assert "mnv" in df[df["variant_category"] == "included"].columns
+    assert "mnv" in df[df["variant_category"] == "pindel"].columns
+
+
 def test_haemonc_smoke_pindel_sheet_present():
     """Precondition: the canonical anonymised HaemOnc fixture has a pindel sheet."""
     import openpyxl
