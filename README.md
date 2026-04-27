@@ -90,7 +90,7 @@ Augean auto-detects the format by matching each workbook against the `fingerprin
 
 **haemonc_uranus_v1** (eggd_generate_variant_workbook v2.11.0+, May 2025 onwards)
 - Sheet `summary`: cell A5 must equal `Subpanel analysed`; cell A6 must equal `M-code`; sample metadata stored as label (column A) / value (column B) pairs.
-- Sheet `included`: must have columns `CHROM`, `POS`, `SYMBOL`, `HGVSc`, `Consequence`, `AF`, `Classification`, `Latest Classification Date`, `Comment`, `Interpreted`.
+- Sheet `included`: must have columns `CHROM`, `POS`, `SYMBOL`, `HGVSc`, `Consequence`, `AF`, `Classification`, `Latest Classification Date`, `Comment`, `Interpreted`, `MNV`.
 - Sheet `m_codes` is optional (only present when `--m_codes` was passed to the workbook generator).
 
 **haemonc_uranus_v0** (eggd_generate_variant_workbook before v2.11.0, pre-May 2025)
@@ -237,7 +237,7 @@ Run the full test suite:
 pytest
 ```
 
-163 unit/integration tests across 7 modules, plus acceptance tests with a live database. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+164 unit/integration tests across 7 modules, plus acceptance tests with a live database. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
 Unit and integration tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in `pyproject.toml`). Wall-clock time ~30s.
 

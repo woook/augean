@@ -1,6 +1,6 @@
 # Test Suite Reference
 
-163 unit/integration tests across 7 modules (162 passing, 1 skipped), plus acceptance tests requiring a live database. All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
+164 unit/integration tests across 7 modules (163 passing, 1 skipped), plus acceptance tests requiring a live database. All tests use pytest with pytest-xdist (`-n auto` in `pyproject.toml`).
 
 ## Running tests
 
@@ -61,7 +61,7 @@ pytest tests/test_acceptance.py -m acceptance \
 
 ---
 
-## `test_parser.py` — 43 tests
+## `test_parser.py` — 44 tests
 
 **Where to start depending on your goal:**
 - New to the codebase → `TestParseWorkbook` (integration tests against real workbooks) and the smoke tests
