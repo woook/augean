@@ -12,7 +12,12 @@ log = logging.getLogger(__name__)
 
 
 def create_engine(db_creds: dict) -> Engine:
-    """Build SQLAlchemy engine from credentials dict."""
+    """Build SQLAlchemy engine from credentials dict.
+
+    Passes ``sslmode`` from the credentials dict to psycopg2 via
+    ``connect_args``. Defaults to ``"require"`` so TLS is enforced unless
+    explicitly overridden (e.g. ``"disable"`` for local development).
+    """
     url = URL.create(
         "postgresql+psycopg2",
         username=db_creds["user"],
@@ -21,7 +26,8 @@ def create_engine(db_creds: dict) -> Engine:
         port=db_creds.get("port", 5432),
         database=db_creds["database"],
     )
-    return _sa_create_engine(url)
+    sslmode = db_creds.get("sslmode", "require")
+    return _sa_create_engine(url, connect_args={"sslmode": sslmode})
 
 
 def add_workbook(
@@ -34,7 +40,7 @@ def add_workbook(
     with engine.begin() as conn:
         result = conn.execute(
             text(
-                f"INSERT INTO {qualified} "
+                f"INSERT INTO {qualified} "  # nosec B608 -- table name from trusted deployment config; values parameterised
                 "(workbook_name, date, format_name) "
                 "VALUES (:wb, :date, :fmt) "
                 "ON CONFLICT (workbook_name) DO NOTHING"
@@ -52,7 +58,7 @@ def mark_workbook_parsed(
     qualified = f"{schema}.{workbooks_table}"
     with engine.begin() as conn:
         conn.execute(
-            text(f"UPDATE {qualified} SET parse_status = TRUE, comment = NULL WHERE workbook_name = :wb"),
+            text(f"UPDATE {qualified} SET parse_status = TRUE, comment = NULL WHERE workbook_name = :wb"),  # nosec B608 -- table name from trusted deployment config; values parameterised
             {"wb": workbook_name},
         )
     log.debug("Marked '%s' as parsed", workbook_name)
@@ -68,7 +74,7 @@ def mark_workbook_failed(
     with engine.begin() as conn:
         conn.execute(
             text(
-                f"UPDATE {qualified} "
+                f"UPDATE {qualified} "  # nosec B608 -- table name from trusted deployment config; values parameterised
                 "SET parse_status = FALSE, comment = :err "
                 "WHERE workbook_name = :wb"
             ),
@@ -162,7 +168,7 @@ def get_parsed_workbooks(
     qualified = f"{schema}.{workbooks_table}"
     with engine.connect() as conn:
         result = conn.execute(
-            text(f"SELECT workbook_name FROM {qualified} WHERE parse_status = TRUE")
+            text(f"SELECT workbook_name FROM {qualified} WHERE parse_status = TRUE")  # nosec B608 -- table name from trusted deployment config
         )
         return [row[0] for row in result]
 
@@ -175,6 +181,6 @@ def get_failed_workbooks(
     qualified = f"{schema}.{workbooks_table}"
     with engine.connect() as conn:
         result = conn.execute(
-            text(f"SELECT workbook_name FROM {qualified} WHERE parse_status = FALSE")
+            text(f"SELECT workbook_name FROM {qualified} WHERE parse_status = FALSE")  # nosec B608 -- table name from trusted deployment config
         )
         return [row[0] for row in result]

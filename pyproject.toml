@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-cov", "pytest-xdist", "freezegun"]
+dev = ["pytest>=8", "pytest-cov", "pytest-xdist", "freezegun", "bandit>=1.7", "pip-audit>=2.7", "pip-tools>=7.4", "cyclonedx-bom>=4"]
 
 [project.scripts]
 augean = "augean.main:main"
@@ -24,6 +24,9 @@ augean = "augean.main:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["augean*"]
+
+[tool.bandit]
+exclude_dirs = ["tests"]
 
 [tool.pytest.ini_options]
 addopts = "-n auto -m 'not acceptance'"

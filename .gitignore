@@ -23,3 +23,6 @@ db_credentials*.json
 !db_credentials.template.json
 deployment*.json
 !deployment.template.json
+# Release artefacts — generated at release time, filed in CRMF; do not commit
+requirements-hashed.txt
+sbom.json

@@ -32,7 +32,7 @@ Augean reads NHS genomics laboratory interpretation workbooks (`.xlsx`), validat
 | Input | Flag | Format / Notes |
 |---|---|---|
 | Excel workbook(s) | `--workbooks_path DIR` or `--samples_file FILE` | `.xlsx` files. Use `--workbooks_path` to process every `.xlsx` in a directory, or `--samples_file` to provide a plain-text file with one absolute workbook path per line. |
-| Database credentials | `--db_credentials FILE` | JSON file with keys `user`, `password`, `host`, `database`, and optionally `port` (default 5432). Always required by the CLI, but the file is not opened when `--dry_run` is set. |
+| Database credentials | `--db_credentials FILE` | JSON file with keys `user`, `password`, `host`, `database`, optionally `port` (default 5432), and optionally `sslmode` (default `require`). Always required by the CLI, but the file is not opened when `--dry_run` is set. |
 
 ### Deployment config (recommended)
 
