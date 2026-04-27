@@ -4,6 +4,14 @@
 
 ## Running tests
 
+Install dependencies from the pinned lockfile before running:
+
+```bash
+pip install --upgrade pip
+pip install -r requirements-dev.txt
+pip install -e . --no-deps
+```
+
 ```bash
 # Unit and integration suite (parallel, ~30s)
 pytest
