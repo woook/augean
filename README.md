@@ -246,7 +246,7 @@ Unit and integration tests run in parallel automatically via `pytest-xdist` (`-n
 | Module | Tests | Coverage | What it covers |
 |---|---|---|---|
 | `test_config.py` | 22 | 97% | Config loading, fingerprint rule types, format auto-detection against real workbooks, v0/v1 fingerprint detection |
-| `test_db.py` | 14 | 97% | SQLAlchemy insert/status/migrate operations |
+| `test_db.py` | 16 | 97% | SQLAlchemy insert/status/migrate operations |
 | `test_loader.py` | 6 | 100% | Workbook opening, format identification |
 | `test_parser.py` | 44 | 94% | All extraction types, optional columns, transform types (percent_to_decimal, to_string), pindel sheet extraction, merge logic, real-workbook integration |
 | `test_transformer.py` | 32 | 94% | Null sentinels, normalisations, two-pass oncogenicity mapping, date coercion (multi-date, backtick/apostrophe), ACGS criteria nulling, comment building |

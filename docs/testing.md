@@ -47,10 +47,11 @@ pytest tests/test_acceptance.py -m acceptance \
 
 ---
 
-## `test_db.py` — 14 tests
+## `test_db.py` — 16 tests
 
 | Class | Tests |
 |-------|-------|
+| `TestCreateEngine` | Passes `sslmode=require` by default; `sslmode` overridable via credentials dict |
 | `TestAddWorkbook` | Executes insert with correct workbook name and format |
 | `TestMarkWorkbookParsed` | Sets parse status to true |
 | `TestMarkWorkbookFailed` | Sets parse status false with error string; handles empty error list |
@@ -226,3 +227,19 @@ Real patient workbooks placed in `workbooks/` are gitignored and will never be c
 Tests that depend on workbook fixtures skip gracefully if the file is absent, so the suite remains runnable in any environment.
 
 Drop additional HaemOnc workbooks into `tests/test_data/workbooks/haemonc/` and they are automatically picked up by the parametrized smoke test — no code changes needed. To also include them in acceptance testing, run `scripts/regenerate_golden.py` afterwards.
+
+---
+
+## CI workflow
+
+Three jobs run on every push and PR to `main` (`.github/workflows/pytest.yml`):
+
+| Job | Trigger | What it does |
+|---|---|---|
+| `test` | push / PR | Installs from `requirements-dev.txt`, runs full pytest suite with coverage |
+| `security` | push / PR | Runs `bandit -r augean/ -ll` (SAST) and `pip-audit` (CVE scan); both gate on zero findings |
+| `release-artefacts` | push to `main` only | Generates `requirements-hashed.txt` and `sbom.json` (CycloneDX SBOM); uploads as workflow artefact `release-artefacts-<sha>` with 90-day retention |
+
+All three jobs install from the committed lockfiles (`requirements-dev.txt`) rather than resolving from version ranges, ensuring reproducible builds.
+
+For CRMF filing: download the `release-artefacts-<sha>` artefact from the GitHub Actions run corresponding to each release commit and file alongside the CSCR in `CRMF/evidence/release_configs/`.
