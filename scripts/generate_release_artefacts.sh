@@ -16,7 +16,7 @@
 set -euo pipefail
 
 echo "Generating hashed requirements..."
-pip-compile pyproject.toml --generate-hashes --output-file requirements-hashed.txt
+pip-compile pyproject.toml --no-strip-extras --generate-hashes --output-file requirements-hashed.txt
 echo "  -> requirements-hashed.txt"
 
 echo "Generating SBOM..."

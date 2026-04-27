@@ -23,7 +23,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e . --no-deps
 
       - name: Run tests
         run: |
@@ -42,7 +44,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -r requirements-dev.txt
+          pip install -e . --no-deps
 
       - name: Run bandit (SAST)
         run: |
@@ -65,11 +68,13 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e ".[dev]"
+          pip install --upgrade pip
+          pip install -r requirements-dev.txt
+          pip install -e . --no-deps
 
       - name: Generate hashed requirements
         run: |
-          pip-compile pyproject.toml --generate-hashes --output-file requirements-hashed.txt
+          pip-compile pyproject.toml --no-strip-extras --generate-hashes --output-file requirements-hashed.txt
 
       - name: Generate SBOM
         run: |
