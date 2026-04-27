@@ -26,3 +26,5 @@ deployment*.json
 # Release artefacts — generated at release time, filed in CRMF; do not commit
 requirements-hashed.txt
 sbom.json
+# Compliance report — not ready for public repo
+docs/compliance.md
