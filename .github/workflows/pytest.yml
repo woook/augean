@@ -49,7 +49,7 @@ jobs:
 
       - name: Run bandit (SAST)
         run: |
-          bandit -r augean/ -ll
+          bandit -r augean/
 
       - name: Run pip-audit (CVE scan)
         run: |

@@ -237,7 +237,7 @@ Run the full test suite:
 pytest
 ```
 
-164 unit/integration tests across 7 modules, plus acceptance tests with a live database. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
+166 unit/integration tests across 7 modules (166 passing, 1 conditionally skipped), plus acceptance tests with a live database. For a detailed breakdown see [`docs/testing.md`](docs/testing.md).
 
 Unit and integration tests run in parallel automatically via `pytest-xdist` (`-n auto` configured in `pyproject.toml`). Wall-clock time ~30s.
 
