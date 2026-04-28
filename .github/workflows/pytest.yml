@@ -56,6 +56,7 @@ jobs:
           pip-audit
 
   release-artefacts:
+    needs: [test, security]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
