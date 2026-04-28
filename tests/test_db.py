@@ -8,6 +8,7 @@ import augean.db as db_module
 from augean.db import (
     add_variants,
     add_workbook,
+    create_engine,
     get_failed_workbooks,
     get_parsed_workbooks,
     mark_workbook_failed,
@@ -26,6 +27,30 @@ def _make_engine():
     engine.connect.return_value.__enter__ = MagicMock(return_value=conn)
     engine.connect.return_value.__exit__ = MagicMock(return_value=False)
     return engine, conn
+
+
+class TestCreateEngine:
+    def test_default_sslmode_is_require(self):
+        """create_engine passes sslmode=require to psycopg2 by default."""
+        creds = {
+            "user": "u", "password": "p", "host": "localhost",
+            "port": 5432, "database": "db",
+        }
+        with patch("augean.db._sa_create_engine") as mock_sa:
+            create_engine(creds)
+        _, kwargs = mock_sa.call_args
+        assert kwargs["connect_args"]["sslmode"] == "require"
+
+    def test_sslmode_overridable(self):
+        """sslmode in credentials dict overrides the default."""
+        creds = {
+            "user": "u", "password": "p", "host": "localhost",
+            "port": 5432, "database": "db", "sslmode": "disable",
+        }
+        with patch("augean.db._sa_create_engine") as mock_sa:
+            create_engine(creds)
+        _, kwargs = mock_sa.call_args
+        assert kwargs["connect_args"]["sslmode"] == "disable"
 
 
 class TestAddWorkbook:
